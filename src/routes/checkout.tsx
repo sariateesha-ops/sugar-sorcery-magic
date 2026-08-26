@@ -1,8 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { CheckCircle2, MessageCircle, Sparkles, Upload, QrCode } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Banknote,
+  CheckCircle2,
+  MessageCircle,
+  QrCode,
+  Sparkles,
+  Store,
+  Truck,
+  Upload,
+} from "lucide-react";
 import { bakery } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
+import { createOrder } from "@/lib/orders.functions";
 import upiQr from "@/assets/upi-qr.jpeg.asset.json";
 
 export const Route = createFileRoute("/checkout")({
@@ -12,17 +23,21 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Confirm your Sugar Sorcery pre-order details, pay via UPI and upload your payment screenshot. Pre-order only, minimum 24 hours notice.",
+          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI or cash on delivery, and get an order code to track your order.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
       {
         property: "og:description",
-        content: "Confirm your Sugar Sorcery pre-order details and UPI payment.",
+        content:
+          "Choose self pickup or delivery, pay by UPI or cash on delivery, and track your Sugar Sorcery pre-order.",
       },
     ],
   }),
   component: CheckoutPage,
 });
+
+type Fulfilment = "pickup" | "delivery";
+type PaymentMethod = "upi" | "cod";
 
 type Details = {
   name: string;
@@ -38,6 +53,9 @@ type Details = {
 
 function CheckoutPage() {
   const { detailedLines, total, clear } = useCart();
+  const placeOrder = useServerFn(createOrder);
+  const [fulfilment, setFulfilment] = useState<Fulfilment>("delivery");
+  const [payment, setPayment] = useState<PaymentMethod>("upi");
   const [details, setDetails] = useState<Details>({
     name: "",
     phone: "",
@@ -51,14 +69,18 @@ function CheckoutPage() {
   });
   const [step, setStep] = useState<"details" | "payment">("details");
   const [proof, setProof] = useState<{ name: string; url: string } | null>(null);
-  const [placed, setPlaced] = useState<{ summary: string; proofUrl: string } | null>(
-    null,
-  );
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<{
+    code: string;
+    summary: string;
+    proofUrl: string | null;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  function buildSummary() {
+  function buildSummary(code: string) {
     const lines = detailedLines
       .map(
         (l) =>
@@ -66,7 +88,7 @@ function CheckoutPage() {
       )
       .join("\n");
     return [
-      `Sugar Sorcery pre-order`,
+      `Sugar Sorcery pre-order · ${code}`,
       ``,
       lines,
       ``,
@@ -76,18 +98,68 @@ function CheckoutPage() {
       `Phone: ${details.phone}`,
       details.email ? `Email: ${details.email}` : "",
       ``,
-      `Delivery address: ${details.address}`,
-      `Landmark: ${details.landmark}`,
-      `Pincode: ${details.pincode}`,
-      `Preferred delivery date: ${details.date}`,
-      `Preferred delivery time: ${details.time}`,
+      fulfilment === "pickup"
+        ? `Fulfilment: Self pickup`
+        : [
+            `Fulfilment: Delivery`,
+            `Delivery address: ${details.address}`,
+            `Landmark: ${details.landmark}`,
+            `Pincode: ${details.pincode}`,
+          ].join("\n"),
+      `Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} date: ${details.date}`,
+      `Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} time: ${details.time}`,
       details.notes ? `Notes: ${details.notes}` : "",
       ``,
-      `Payment: Paid via UPI (${bakery.upiId})`,
-      `Payment screenshot: attaching in this chat`,
+      payment === "upi"
+        ? `Payment: Paid via UPI (${bakery.upiId}) — payment screenshot attached in this chat`
+        : `Payment: Cash on ${fulfilment === "pickup" ? "pickup" : "delivery"}`,
     ]
       .filter(Boolean)
       .join("\n");
+  }
+
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await placeOrder({
+        data: {
+          customerName: details.name,
+          phone: details.phone,
+          email: details.email,
+          fulfilment,
+          address: fulfilment === "delivery" ? details.address : "",
+          landmark: fulfilment === "delivery" ? details.landmark : "",
+          pincode: fulfilment === "delivery" ? details.pincode : "",
+          preferredDate: details.date,
+          preferredTime: details.time,
+          notes: details.notes,
+          paymentMethod: payment,
+          items: detailedLines.map((l) => ({
+            name: l.name,
+            category: l.category,
+            variantLabel: l.variantLabel,
+            quantity: l.quantity,
+            price: l.price,
+            lineTotal: l.lineTotal,
+          })),
+          total,
+        },
+      });
+      const code = res?.code ?? "";
+      const summary = buildSummary(code);
+      clear();
+      setPlaced({ code, summary, proofUrl: proof?.url ?? null });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong placing the order. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (placed) {
@@ -95,31 +167,46 @@ function CheckoutPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
         <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-        <h1 className="brand-title mt-4 text-4xl text-primary">Payment received</h1>
+        <h1 className="brand-title mt-4 text-4xl text-primary">Order placed</h1>
         <p className="mt-3 text-muted-foreground">
-          Your order details are ready to be sent to Sugar Sorcery on WhatsApp
-          ({bakery.phone}). Tap the button below — the full order is pre-filled. Please
-          also attach the payment screenshot you uploaded so the order can be confirmed.
+          Your order code is{" "}
+          <span className="font-medium text-foreground">{placed.code}</span>. Keep it
+          safe — you can follow your order any time on the tracking page.
+        </p>
+        <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link
+            to="/track"
+            search={{ code: placed.code }}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
+          >
+            Track my order
+          </Link>
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/30 px-6 py-2.5 text-sm text-primary"
+          >
+            <MessageCircle className="h-4 w-4" /> Send details on WhatsApp
+          </a>
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Tap “Send details on WhatsApp” so the bakery receives your complete order
+          {placed.proofUrl ? " — please also attach your payment screenshot" : ""}.
         </p>
         <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border/70 bg-card p-5 text-left text-sm">
           {placed.summary}
         </pre>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
-          >
-            <MessageCircle className="h-4 w-4" /> Send order on WhatsApp
-          </a>
-          <a
-            href={placed.proofUrl}
-            download="payment-screenshot"
-            className="rounded-full border border-primary/30 px-6 py-2.5 text-sm text-primary"
-          >
-            Save payment screenshot
-          </a>
+          {placed.proofUrl && (
+            <a
+              href={placed.proofUrl}
+              download="payment-screenshot"
+              className="rounded-full border border-primary/30 px-6 py-2.5 text-sm text-primary"
+            >
+              Save payment screenshot
+            </a>
+          )}
           <Link
             to="/menu"
             className="rounded-full border border-border px-6 py-2.5 text-sm text-foreground"
@@ -159,15 +246,39 @@ function CheckoutPage() {
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_1fr]">
         {step === "details" ? (
           <form
-            className="space-y-4 rounded-xl border border-border/70 bg-card p-6"
+            className="space-y-5 rounded-xl border border-border/70 bg-card p-6"
             onSubmit={(e) => {
               e.preventDefault();
-              setStep("payment");
+              if (payment === "upi") setStep("payment");
+              else void submit();
             }}
           >
+            <fieldset>
+              <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                How would you like to receive your order?
+              </legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Choice
+                  active={fulfilment === "pickup"}
+                  onClick={() => setFulfilment("pickup")}
+                  icon={<Store className="h-4 w-4" />}
+                  title="Self Pickup"
+                  subtitle={bakery.address}
+                />
+                <Choice
+                  active={fulfilment === "delivery"}
+                  onClick={() => setFulfilment("delivery")}
+                  icon={<Truck className="h-4 w-4" />}
+                  title="Delivery"
+                  subtitle="We deliver to your address"
+                />
+              </div>
+            </fieldset>
+
             <Field label="Full name">
               <input
                 required
+                maxLength={100}
                 value={details.name}
                 onChange={(e) => setDetails({ ...details, name: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -177,6 +288,7 @@ function CheckoutPage() {
               <input
                 required
                 inputMode="tel"
+                maxLength={20}
                 value={details.phone}
                 onChange={(e) => setDetails({ ...details, phone: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -185,43 +297,54 @@ function CheckoutPage() {
             <Field label="Email (optional)">
               <input
                 type="email"
+                maxLength={255}
                 value={details.email}
                 onChange={(e) => setDetails({ ...details, email: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </Field>
-            <Field label="Full delivery address (flat / building / wing, street, area, city)">
-              <textarea
-                required
-                rows={3}
-                placeholder="e.g. Flat 402, B Wing, Shree Residency, Sector 12, Kharghar, Navi Mumbai"
-                value={details.address}
-                onChange={(e) => setDetails({ ...details, address: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
-            <Field label="Nearby landmark">
-              <input
-                required
-                placeholder="e.g. opposite Little World Mall, next to HDFC ATM"
-                value={details.landmark}
-                onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
-            <Field label="Pincode">
-              <input
-                required
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                placeholder="410210"
-                value={details.pincode}
-                onChange={(e) => setDetails({ ...details, pincode: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
+
+            {fulfilment === "delivery" && (
+              <>
+                <Field label="Full delivery address (flat / building / wing, street, area, city)">
+                  <textarea
+                    required
+                    rows={3}
+                    maxLength={500}
+                    placeholder="e.g. Flat 402, B Wing, Shree Residency, Sector 12, Kharghar, Navi Mumbai"
+                    value={details.address}
+                    onChange={(e) => setDetails({ ...details, address: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                </Field>
+                <Field label="Nearby landmark">
+                  <input
+                    required
+                    maxLength={200}
+                    placeholder="e.g. opposite Little World Mall, next to HDFC ATM"
+                    value={details.landmark}
+                    onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                </Field>
+                <Field label="Pincode">
+                  <input
+                    required
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    placeholder="410210"
+                    value={details.pincode}
+                    onChange={(e) => setDetails({ ...details, pincode: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                </Field>
+              </>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Preferred delivery date">
+              <Field
+                label={`Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} date`}
+              >
                 <input
                   required
                   type="date"
@@ -231,7 +354,9 @@ function CheckoutPage() {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 />
               </Field>
-              <Field label="Preferred delivery time">
+              <Field
+                label={`Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} time`}
+              >
                 <input
                   required
                   type="time"
@@ -244,17 +369,49 @@ function CheckoutPage() {
             <Field label="Notes (optional)">
               <textarea
                 rows={3}
+                maxLength={1000}
                 value={details.notes}
                 onChange={(e) => setDetails({ ...details, notes: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </Field>
 
+            <fieldset>
+              <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Payment method
+              </legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Choice
+                  active={payment === "upi"}
+                  onClick={() => setPayment("upi")}
+                  icon={<QrCode className="h-4 w-4" />}
+                  title="UPI / QR Code"
+                  subtitle="Pay now by scanning our QR"
+                />
+                <Choice
+                  active={payment === "cod"}
+                  onClick={() => setPayment("cod")}
+                  icon={<Banknote className="h-4 w-4" />}
+                  title="Cash on Delivery"
+                  subtitle={
+                    fulfilment === "pickup" ? "Pay when you pick up" : "Pay on delivery"
+                  }
+                />
+              </div>
+            </fieldset>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
             <button
               type="submit"
-              className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90"
+              disabled={submitting}
+              className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              Continue to payment · {formatPrice(total)}
+              {payment === "upi"
+                ? `Continue to payment · ${formatPrice(total)}`
+                : submitting
+                  ? "Placing order…"
+                  : `Place order · ${formatPrice(total)}`}
             </button>
           </form>
         ) : (
@@ -265,8 +422,8 @@ function CheckoutPage() {
             </div>
             <p className="text-sm text-muted-foreground">
               Scan the QR with any UPI app (GPay, PhonePe, Paytm) and pay the exact
-              total. Then upload the payment screenshot below — your order is sent to us
-              only after the payment proof is uploaded.
+              total. Then upload the payment screenshot below — your order is placed only
+              after the payment proof is uploaded.
             </p>
             <div className="flex flex-col items-center gap-3 rounded-lg border border-border/70 bg-background p-5">
               <img
@@ -322,18 +479,15 @@ function CheckoutPage() {
               )}
             </div>
 
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
             <button
               type="button"
-              disabled={!proof}
-              onClick={() => {
-                if (!proof) return;
-                const summary = buildSummary();
-                clear();
-                setPlaced({ summary, proofUrl: proof.url });
-              }}
+              disabled={!proof || submitting}
+              onClick={() => void submit()}
               className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Confirm payment &amp; send order
+              {submitting ? "Placing order…" : "Confirm payment & place order"}
             </button>
             <button
               type="button"
@@ -371,6 +525,39 @@ function CheckoutPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+function Choice({
+  active,
+  onClick,
+  icon,
+  title,
+  subtitle,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-lg border p-4 text-left transition-colors ${
+        active
+          ? "border-primary bg-primary/10"
+          : "border-border/70 bg-background hover:border-primary/50"
+      }`}
+    >
+      <span className="flex items-center gap-2 text-primary">
+        {icon}
+        <span className="text-sm font-medium">{title}</span>
+      </span>
+      <span className="mt-1 block text-xs text-muted-foreground">{subtitle}</span>
+    </button>
   );
 }
 
