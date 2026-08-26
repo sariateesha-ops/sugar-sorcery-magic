@@ -39,10 +39,13 @@ function HomePage() {
             height={407}
           />
 
-          <p className="mt-6 font-display text-2xl tracking-wide sm:text-3xl">
+          <h1 className="brand-title mt-8 text-5xl leading-[1.05] sm:text-6xl">
+            Sugar Sorcery
+          </h1>
+          <p className="mt-4 font-display text-2xl italic tracking-wide sm:text-3xl">
             {bakery.tagline}
           </p>
-          <p className="mt-4 max-w-xl text-sm uppercase tracking-[0.25em] opacity-80">
+          <p className="mt-5 max-w-xl text-sm uppercase tracking-[0.25em] opacity-80">
             {bakery.menuTagline}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
