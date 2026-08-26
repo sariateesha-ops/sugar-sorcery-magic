@@ -306,8 +306,13 @@ export const bakery = {
   whatsappHref: "https://wa.me/917710865577",
   instagram:
     "https://www.instagram.com/sugar_sorcery_?igsi=MTNiOHA1NTM0cTN2aA==",
-  /** Replace with the exact Google Maps link once provided. */
-  mapsUrl: "",
+  /** Exact Google Maps link provided by the bakery. */
+  mapsUrl: "https://maps.app.goo.gl/eacg7veyg8QpWBjdA?g_st=iw",
+  /** Embed of the same Google Maps place. */
+  mapsEmbedUrl:
+    "https://www.google.com/maps?q=Kharghar,+Navi+Mumbai,+Maharashtra,+India&ftid=0x3be7c21a53e30b83:0xa766b29f687709d7&output=embed",
+  about:
+    "Sugar Sorcery is a small home bakery in Kharghar, Navi Mumbai, baking bombolonis, cookies, brownies, cakes and basque cheesecakes to order. Everything is made fresh in small batches once your order is placed, which is why we bake on a pre-order basis only and ask for at least 24 hours' notice. Choose self pickup or delivery, pay by UPI or cash on delivery, and follow your order right up to the moment it reaches you.",
   hours: "Open at all times",
   orders: "Pre-order only",
   upiId: "ishitagupte00-1@okhdfcbank",
