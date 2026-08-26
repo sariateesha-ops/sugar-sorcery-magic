@@ -34,10 +34,11 @@ function HomePage() {
           <img
             src={logo.url}
             alt="Sugar Sorcery logo"
-            className="w-56 sm:w-72"
+            className="w-56 rounded-2xl ring-1 ring-primary-foreground/25 sm:w-72"
             width={288}
             height={407}
           />
+
           <p className="mt-6 font-display text-2xl tracking-wide sm:text-3xl">
             {bakery.tagline}
           </p>
