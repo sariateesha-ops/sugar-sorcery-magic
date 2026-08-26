@@ -28,7 +28,11 @@ type Details = {
   name: string;
   phone: string;
   email: string;
+  address: string;
+  landmark: string;
+  pincode: string;
   date: string;
+  time: string;
   notes: string;
 };
 
@@ -38,7 +42,11 @@ function CheckoutPage() {
     name: "",
     phone: "",
     email: "",
+    address: "",
+    landmark: "",
+    pincode: "",
     date: "",
+    time: "",
     notes: "",
   });
   const [step, setStep] = useState<"details" | "payment">("details");
