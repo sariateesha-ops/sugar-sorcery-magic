@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { CheckCircle2, MessageCircle, Sparkles, Upload, QrCode } from "lucide-react";
 import { bakery } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
+import upiQr from "@/assets/upi-qr.jpeg.asset.json";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -11,12 +12,12 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Confirm your Sugar Sorcery pre-order details. Pre-order only, minimum 24 hours notice.",
+          "Confirm your Sugar Sorcery pre-order details, pay via UPI and upload your payment screenshot. Pre-order only, minimum 24 hours notice.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
       {
         property: "og:description",
-        content: "Confirm your Sugar Sorcery pre-order details and payment.",
+        content: "Confirm your Sugar Sorcery pre-order details and UPI payment.",
       },
     ],
   }),
@@ -40,7 +41,12 @@ function CheckoutPage() {
     date: "",
     notes: "",
   });
-  const [placed, setPlaced] = useState<{ summary: string } | null>(null);
+  const [step, setStep] = useState<"details" | "payment">("details");
+  const [proof, setProof] = useState<{ name: string; url: string } | null>(null);
+  const [placed, setPlaced] = useState<{ summary: string; proofUrl: string } | null>(
+    null,
+  );
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -63,34 +69,47 @@ function CheckoutPage() {
       details.email ? `Email: ${details.email}` : "",
       `Preferred date: ${details.date}`,
       details.notes ? `Notes: ${details.notes}` : "",
+      ``,
+      `Payment: Paid via UPI (${bakery.upiId})`,
+      `Payment screenshot: attaching in this chat`,
     ]
       .filter(Boolean)
       .join("\n");
   }
 
   if (placed) {
+    const waHref = `${bakery.whatsappHref}?text=${encodeURIComponent(placed.summary)}`;
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
         <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-        <h1 className="brand-title mt-4 text-4xl text-primary">Pre-order placed</h1>
+        <h1 className="brand-title mt-4 text-4xl text-primary">Payment received</h1>
         <p className="mt-3 text-muted-foreground">
-          Send your order to us on WhatsApp to confirm the slot and complete payment.
+          Your order details are ready to be sent to Sugar Sorcery on WhatsApp
+          ({bakery.phone}). Tap the button below — the full order is pre-filled. Please
+          also attach the payment screenshot you uploaded so the order can be confirmed.
         </p>
         <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border/70 bg-card p-5 text-left text-sm">
           {placed.summary}
         </pre>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <a
-            href={`${bakery.whatsappHref}?text=${encodeURIComponent(placed.summary)}`}
+            href={waHref}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
           >
-            <MessageCircle className="h-4 w-4" /> Confirm on WhatsApp
+            <MessageCircle className="h-4 w-4" /> Send order on WhatsApp
+          </a>
+          <a
+            href={placed.proofUrl}
+            download="payment-screenshot"
+            className="rounded-full border border-primary/30 px-6 py-2.5 text-sm text-primary"
+          >
+            Save payment screenshot
           </a>
           <Link
             to="/menu"
-            className="rounded-full border border-primary/30 px-6 py-2.5 text-sm text-primary"
+            className="rounded-full border border-border px-6 py-2.5 text-sm text-foreground"
           >
             Back to menu
           </Link>
@@ -125,66 +144,152 @@ function CheckoutPage() {
       </p>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-        <form
-          className="space-y-4 rounded-xl border border-border/70 bg-card p-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const summary = buildSummary();
-            clear();
-            setPlaced({ summary });
-          }}
-        >
-          <Field label="Full name">
-            <input
-              required
-              value={details.name}
-              onChange={(e) => setDetails({ ...details, name: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Phone number">
-            <input
-              required
-              inputMode="tel"
-              value={details.phone}
-              onChange={(e) => setDetails({ ...details, phone: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Email (optional)">
-            <input
-              type="email"
-              value={details.email}
-              onChange={(e) => setDetails({ ...details, email: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Preferred pickup date">
-            <input
-              required
-              type="date"
-              min={minDate}
-              value={details.date}
-              onChange={(e) => setDetails({ ...details, date: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Notes (optional)">
-            <textarea
-              rows={3}
-              value={details.notes}
-              onChange={(e) => setDetails({ ...details, notes: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-
-          <button
-            type="submit"
-            className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90"
+        {step === "details" ? (
+          <form
+            className="space-y-4 rounded-xl border border-border/70 bg-card p-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setStep("payment");
+            }}
           >
-            Place pre-order · {formatPrice(total)}
-          </button>
-        </form>
+            <Field label="Full name">
+              <input
+                required
+                value={details.name}
+                onChange={(e) => setDetails({ ...details, name: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Phone number">
+              <input
+                required
+                inputMode="tel"
+                value={details.phone}
+                onChange={(e) => setDetails({ ...details, phone: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Email (optional)">
+              <input
+                type="email"
+                value={details.email}
+                onChange={(e) => setDetails({ ...details, email: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Preferred pickup date">
+              <input
+                required
+                type="date"
+                min={minDate}
+                value={details.date}
+                onChange={(e) => setDetails({ ...details, date: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Notes (optional)">
+              <textarea
+                rows={3}
+                value={details.notes}
+                onChange={(e) => setDetails({ ...details, notes: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+
+            <button
+              type="submit"
+              className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Continue to payment · {formatPrice(total)}
+            </button>
+          </form>
+        ) : (
+          <section className="space-y-5 rounded-xl border border-border/70 bg-card p-6">
+            <div className="flex items-center gap-2 text-primary">
+              <QrCode className="h-5 w-5" />
+              <h2 className="text-2xl">Pay {formatPrice(total)} via UPI</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Scan the QR with any UPI app (GPay, PhonePe, Paytm) and pay the exact
+              total. Then upload the payment screenshot below — your order is sent to us
+              only after the payment proof is uploaded.
+            </p>
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-border/70 bg-background p-5">
+              <img
+                src={upiQr.url}
+                alt={`UPI QR code to pay ${bakery.upiName} at ${bakery.upiId}`}
+                className="w-full max-w-[280px] rounded-lg"
+                loading="lazy"
+              />
+              <p className="text-center text-sm">
+                <span className="text-muted-foreground">UPI ID: </span>
+                <span className="font-medium">{bakery.upiId}</span>
+              </p>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Payment screenshot
+              </span>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return setProof(null);
+                  if (!file.type.startsWith("image/")) return setProof(null);
+                  setProof({ name: file.name, url: URL.createObjectURL(file) });
+                }}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-5 py-2.5 text-sm text-primary"
+              >
+                <Upload className="h-4 w-4" />
+                {proof ? "Change screenshot" : "Upload screenshot"}
+              </button>
+              {proof && (
+                <div className="mt-4 flex items-center gap-3 rounded-lg border border-border/70 p-3">
+                  <img
+                    src={proof.url}
+                    alt="Uploaded payment screenshot"
+                    className="h-20 w-20 rounded object-cover"
+                  />
+                  <div className="text-sm">
+                    <p className="font-medium text-foreground">{proof.name}</p>
+                    <p className="flex items-center gap-1 text-primary">
+                      <CheckCircle2 className="h-4 w-4" /> Payment proof attached
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={!proof}
+              onClick={() => {
+                if (!proof) return;
+                const summary = buildSummary();
+                clear();
+                setPlaced({ summary, proofUrl: proof.url });
+              }}
+              className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Confirm payment &amp; send order
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("details")}
+              className="w-full text-xs uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              Back to details
+            </button>
+          </section>
+        )}
 
         <aside className="h-fit rounded-xl border border-border/70 bg-card p-6">
           <h2 className="text-2xl text-primary">Order summary</h2>

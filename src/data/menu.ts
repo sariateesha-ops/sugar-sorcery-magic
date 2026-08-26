@@ -310,4 +310,7 @@ export const bakery = {
   mapsUrl: "",
   hours: "Open at all times",
   orders: "Pre-order only",
+  upiId: "ishitagupte00-1@okhdfcbank",
+  upiName: "Ishita Gupte",
 };
+
