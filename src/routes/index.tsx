@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.asset.json";
 import { bakery, menu } from "@/data/menu";
 
@@ -70,7 +70,7 @@ function HomePage() {
         <InfoTile icon={<Clock className="h-5 w-5" />} title="Opening status">
           {bakery.hours}
         </InfoTile>
-        <InfoTile icon={<Instagram className="h-5 w-5" />} title="Orders">
+        <InfoTile icon={<Sparkles className="h-5 w-5" />} title="Orders">
           {bakery.orders} · 24 hours prior
         </InfoTile>
       </section>
