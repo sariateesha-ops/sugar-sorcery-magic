@@ -34,7 +34,8 @@ function HomePage() {
           <img
             src={logo.url}
             alt="Sugar Sorcery logo"
-            className="w-56 rounded-2xl ring-1 ring-primary-foreground/25 sm:w-72"
+            className="h-40 w-40 rounded-full object-cover ring-1 ring-primary-foreground/25 sm:h-52 sm:w-52"
+            style={{ objectPosition: "50% 28%" }}
             width={288}
             height={407}
           />
