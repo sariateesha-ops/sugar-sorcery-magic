@@ -28,7 +28,11 @@ type Details = {
   name: string;
   phone: string;
   email: string;
+  address: string;
+  landmark: string;
+  pincode: string;
   date: string;
+  time: string;
   notes: string;
 };
 
@@ -38,7 +42,11 @@ function CheckoutPage() {
     name: "",
     phone: "",
     email: "",
+    address: "",
+    landmark: "",
+    pincode: "",
     date: "",
+    time: "",
     notes: "",
   });
   const [step, setStep] = useState<"details" | "payment">("details");
@@ -67,7 +75,12 @@ function CheckoutPage() {
       `Name: ${details.name}`,
       `Phone: ${details.phone}`,
       details.email ? `Email: ${details.email}` : "",
-      `Preferred date: ${details.date}`,
+      ``,
+      `Delivery address: ${details.address}`,
+      `Landmark: ${details.landmark}`,
+      `Pincode: ${details.pincode}`,
+      `Preferred delivery date: ${details.date}`,
+      `Preferred delivery time: ${details.time}`,
       details.notes ? `Notes: ${details.notes}` : "",
       ``,
       `Payment: Paid via UPI (${bakery.upiId})`,
@@ -177,16 +190,57 @@ function CheckoutPage() {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </Field>
-            <Field label="Preferred pickup date">
-              <input
+            <Field label="Full delivery address (flat / building / wing, street, area, city)">
+              <textarea
                 required
-                type="date"
-                min={minDate}
-                value={details.date}
-                onChange={(e) => setDetails({ ...details, date: e.target.value })}
+                rows={3}
+                placeholder="e.g. Flat 402, B Wing, Shree Residency, Sector 12, Kharghar, Navi Mumbai"
+                value={details.address}
+                onChange={(e) => setDetails({ ...details, address: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </Field>
+            <Field label="Nearby landmark">
+              <input
+                required
+                placeholder="e.g. opposite Little World Mall, next to HDFC ATM"
+                value={details.landmark}
+                onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Pincode">
+              <input
+                required
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                placeholder="410210"
+                value={details.pincode}
+                onChange={(e) => setDetails({ ...details, pincode: e.target.value })}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Preferred delivery date">
+                <input
+                  required
+                  type="date"
+                  min={minDate}
+                  value={details.date}
+                  onChange={(e) => setDetails({ ...details, date: e.target.value })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </Field>
+              <Field label="Preferred delivery time">
+                <input
+                  required
+                  type="time"
+                  value={details.time}
+                  onChange={(e) => setDetails({ ...details, time: e.target.value })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </Field>
+            </div>
             <Field label="Notes (optional)">
               <textarea
                 rows={3}
