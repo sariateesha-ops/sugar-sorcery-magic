@@ -35,7 +35,14 @@ type CartContextValue = {
 
 const STORAGE_KEY = "sugar-sorcery-cart";
 
-const CartContext = createContext<CartContextValue | null>(null);
+// Stored on globalThis so hot-reloads / duplicate module instances share the
+// exact same context object instead of throwing "must be used inside CartProvider".
+const globalStore = globalThis as unknown as {
+  __sugarSorceryCartContext?: React.Context<CartContextValue | null>;
+};
+const CartContext =
+  globalStore.__sugarSorceryCartContext ??
+  (globalStore.__sugarSorceryCartContext = createContext<CartContextValue | null>(null));
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
