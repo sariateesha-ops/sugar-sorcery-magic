@@ -14,68 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      orders: {
+      customers: {
         Row: {
-          address: string | null
-          code: string
           created_at: string
-          customer_name: string
-          email: string | null
-          fulfilment: string
           id: string
-          items: Json
-          landmark: string | null
-          notes: string | null
-          payment_method: string
+          name: string
           phone: string
-          pincode: string | null
-          preferred_date: string
-          preferred_time: string
-          status: string
-          total: number
           updated_at: string
         }
         Insert: {
-          address?: string | null
-          code: string
           created_at?: string
-          customer_name: string
-          email?: string | null
-          fulfilment: string
           id?: string
-          items: Json
-          landmark?: string | null
-          notes?: string | null
-          payment_method: string
+          name: string
           phone: string
-          pincode?: string | null
-          preferred_date: string
-          preferred_time: string
-          status?: string
-          total: number
           updated_at?: string
         }
         Update: {
-          address?: string | null
-          code?: string
           created_at?: string
-          customer_name?: string
-          email?: string | null
-          fulfilment?: string
           id?: string
-          items?: Json
-          landmark?: string | null
-          notes?: string | null
-          payment_method?: string
+          name?: string
           phone?: string
-          pincode?: string | null
-          preferred_date?: string
-          preferred_time?: string
-          status?: string
-          total?: number
           updated_at?: string
         }
         Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          price: number
+          product_id: string | null
+          product_image: string | null
+          product_name: string
+          quantity: number
+          subtotal: number
+          variant_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          price?: number
+          product_id?: string | null
+          product_image?: string | null
+          product_name: string
+          quantity?: number
+          subtotal?: number
+          variant_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          price?: number
+          product_id?: string | null
+          product_image?: string | null
+          product_name?: string
+          quantity?: number
+          subtotal?: number
+          variant_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address: string | null
+          delivery_charge: number
+          fulfilment: string
+          id: string
+          landmark: string | null
+          notes: string | null
+          order_id: string
+          payment_method: string
+          pincode: string | null
+          preferred_date: string | null
+          preferred_time: string | null
+          status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivery_address?: string | null
+          delivery_charge?: number
+          fulfilment?: string
+          id?: string
+          landmark?: string | null
+          notes?: string | null
+          order_id?: string
+          payment_method: string
+          pincode?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          customer_phone?: string
+          delivery_address?: string | null
+          delivery_charge?: number
+          fulfilment?: string
+          id?: string
+          landmark?: string | null
+          notes?: string | null
+          order_id?: string
+          payment_method?: string
+          pincode?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

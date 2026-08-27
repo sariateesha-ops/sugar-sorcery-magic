@@ -1,92 +1,70 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const itemSchema = z.object({
-  name: z.string().max(120),
-  category: z.string().max(120),
-  variantLabel: z.string().max(120),
-  quantity: z.number().int().min(1).max(99),
-  price: z.number().min(0).max(100000),
-  lineTotal: z.number().min(0).max(1000000),
-});
-
-const orderSchema = z
-  .object({
-    customerName: z.string().trim().min(2).max(100),
-    phone: z.string().trim().min(8).max(20),
-    email: z.string().trim().email().max(255).optional().or(z.literal("")),
-    fulfilment: z.enum(["pickup", "delivery"]),
-    address: z.string().trim().max(500).optional().or(z.literal("")),
-    landmark: z.string().trim().max(200).optional().or(z.literal("")),
-    pincode: z.string().trim().max(10).optional().or(z.literal("")),
-    preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    preferredTime: z.string().trim().min(3).max(20),
-    notes: z.string().trim().max(1000).optional().or(z.literal("")),
-    paymentMethod: z.enum(["upi", "cod"]),
-    items: z.array(itemSchema).min(1).max(50),
-    total: z.number().min(1).max(1000000),
-  })
-  .refine((v) => v.fulfilment === "pickup" || (v.address && v.address.length > 5), {
-    message: "Delivery address is required for delivery orders",
-    path: ["address"],
-  });
-
-function makeCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  for (const b of bytes) out += alphabet[b % alphabet.length];
-  return `SS-${out}`;
-}
+import { adminOrderSchema, createOrderSchema } from "@/lib/order-schemas";
 
 export const createOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => orderSchema.parse(input))
+  .inputValidator((input: unknown) => createOrderSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const code = makeCode();
+    const { verifyCustomerToken } = await import("@/lib/customer-token.server");
+    const session = await verifyCustomerToken(data.token);
+    if (!session) throw new Error("Please sign in before placing your order.");
 
-    const { data: row, error } = await supabaseAdmin
+    const { data: customer } = await supabaseAdmin
+      .from("customers")
+      .select("id, name, phone")
+      .eq("id", session.id)
+      .maybeSingle();
+    if (!customer) throw new Error("Please sign in before placing your order.");
+
+    const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
-        code,
-        customer_name: data.customerName,
-        phone: data.phone,
-        email: data.email || null,
+        customer_id: customer.id,
+        customer_name: customer.name,
+        customer_phone: customer.phone,
         fulfilment: data.fulfilment,
-        address: data.fulfilment === "delivery" ? data.address || null : null,
+        delivery_address: data.fulfilment === "delivery" ? data.address || null : null,
         landmark: data.fulfilment === "delivery" ? data.landmark || null : null,
         pincode: data.fulfilment === "delivery" ? data.pincode || null : null,
         preferred_date: data.preferredDate,
         preferred_time: data.preferredTime,
         notes: data.notes || null,
         payment_method: data.paymentMethod,
-        items: data.items,
-        total: data.total,
-        status: "placed",
+        subtotal: data.subtotal,
+        delivery_charge: data.deliveryCharge,
+        total_amount: data.total,
+        status: "pending",
       })
-      .select("code, status, created_at")
+      .select("id, order_id, status, total_amount, payment_method, created_at")
       .single();
 
-    if (error) throw new Error("Could not save the order. Please try again.");
-    return row;
-  });
+    if (error || !order) throw new Error("Could not save the order. Please try again.");
 
-const publicOrderColumns =
-  "code, customer_name, fulfilment, preferred_date, preferred_time, payment_method, items, total, status, created_at, updated_at";
+    const { error: itemsError } = await supabaseAdmin.from("order_items").insert(
+      data.items.map((item) => ({
+        order_id: order.id,
+        product_id: item.productId,
+        product_name: `${item.name} (${item.category})`,
+        product_image: item.image || null,
+        variant_label: item.variantLabel,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.lineTotal,
+      })),
+    );
+    if (itemsError) {
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      throw new Error("Could not save the order items. Please try again.");
+    }
 
-export const trackOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ code: z.string().trim().min(4).max(20) }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
-      .from("orders")
-      .select(publicOrderColumns)
-      .eq("code", data.code.toUpperCase())
-      .maybeSingle();
-    return row ?? null;
+    return {
+      orderId: order.order_id,
+      customerName: customer.name,
+      total: Number(order.total_amount),
+      paymentMethod: order.payment_method,
+      status: order.status,
+    };
   });
 
 export const listOrders = createServerFn({ method: "POST" })
@@ -94,37 +72,46 @@ export const listOrders = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("orders")
-      .select("*")
+      .select("*, order_items(*)")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(500);
     if (error) throw new Error("Not allowed to read orders.");
-    return data;
+    return data ?? [];
   });
 
-export const updateOrderStatus = createServerFn({ method: "POST" })
+export const getAdminOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        code: z.string().trim().min(4).max(20),
-        status: z.enum([
-          "placed",
-          "confirmed",
-          "preparing",
-          "ready",
-          "delivered",
-          "cancelled",
-        ]),
-      })
-      .parse(input),
-  )
+  .inputValidator((input: unknown) => adminOrderSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("orders")
-      .update({ status: data.status })
-      .eq("code", data.code)
-      .select("code, status")
+      .select("*, order_items(*)")
+      .eq("order_id", data.orderId.toUpperCase())
+      .maybeSingle();
+    if (error) throw new Error("Not allowed to read this order.");
+    return row ?? null;
+  });
+
+export const markOrderDelivered = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => adminOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("orders")
+      .update({ status: "delivered" })
+      .eq("order_id", data.orderId.toUpperCase())
+      .select("order_id, status")
       .maybeSingle();
     if (error || !row) throw new Error("Could not update this order.");
     return row;
+  });
+
+export const checkIsAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return { isAdmin: data === true };
   });
