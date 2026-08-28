@@ -10,10 +10,12 @@ import {
   Store,
   Truck,
   Upload,
+  UserRound,
 } from "lucide-react";
 import { bakery } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
 import { createOrder } from "@/lib/orders.functions";
+import { useCustomer } from "@/lib/customer-session";
 import upiQr from "@/assets/upi-qr.jpeg.asset.json";
 
 export const Route = createFileRoute("/checkout")({
@@ -23,13 +25,13 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI or cash on delivery, and get an order code to track your order.",
+          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI or cash on delivery, and follow it in My Orders.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
       {
         property: "og:description",
         content:
-          "Choose self pickup or delivery, pay by UPI or cash on delivery, and track your Sugar Sorcery pre-order.",
+          "Choose self pickup or delivery, pay by UPI or cash on delivery, and follow your Sugar Sorcery pre-order in My Orders.",
       },
     ],
   }),
@@ -40,9 +42,6 @@ type Fulfilment = "pickup" | "delivery";
 type PaymentMethod = "upi" | "cod";
 
 type Details = {
-  name: string;
-  phone: string;
-  email: string;
   address: string;
   landmark: string;
   pincode: string;
@@ -53,13 +52,11 @@ type Details = {
 
 function CheckoutPage() {
   const { detailedLines, total, clear } = useCart();
+  const { customer, token, signedIn, loading, refresh } = useCustomer();
   const placeOrder = useServerFn(createOrder);
   const [fulfilment, setFulfilment] = useState<Fulfilment>("delivery");
   const [payment, setPayment] = useState<PaymentMethod>("upi");
   const [details, setDetails] = useState<Details>({
-    name: "",
-    phone: "",
-    email: "",
     address: "",
     landmark: "",
     pincode: "",
@@ -72,15 +69,16 @@ function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{
-    code: string;
+    orderId: string;
     summary: string;
     proofUrl: string | null;
   } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const deliveryCharge = 0;
 
-  function buildSummary(code: string) {
+  function buildSummary(orderId: string) {
     const lines = detailedLines
       .map(
         (l) =>
@@ -88,15 +86,14 @@ function CheckoutPage() {
       )
       .join("\n");
     return [
-      `Sugar Sorcery pre-order · ${code}`,
+      `Sugar Sorcery pre-order · ${orderId}`,
       ``,
       lines,
       ``,
-      `Total: ${formatPrice(total)}`,
+      `Total: ${formatPrice(total + deliveryCharge)}`,
       ``,
-      `Name: ${details.name}`,
-      `Phone: ${details.phone}`,
-      details.email ? `Email: ${details.email}` : "",
+      `Name: ${customer?.name ?? ""}`,
+      `Phone: ${customer?.phone ?? ""}`,
       ``,
       fulfilment === "pickup"
         ? `Fulfilment: Self pickup`
@@ -119,15 +116,13 @@ function CheckoutPage() {
   }
 
   async function submit() {
-    if (submitting) return;
+    if (submitting || !token) return;
     setSubmitting(true);
     setError(null);
     try {
       const res = await placeOrder({
         data: {
-          customerName: details.name,
-          phone: details.phone,
-          email: details.email,
+          token,
           fulfilment,
           address: fulfilment === "delivery" ? details.address : "",
           landmark: fulfilment === "delivery" ? details.landmark : "",
@@ -137,20 +132,24 @@ function CheckoutPage() {
           notes: details.notes,
           paymentMethod: payment,
           items: detailedLines.map((l) => ({
+            productId: l.productId,
             name: l.name,
             category: l.category,
             variantLabel: l.variantLabel,
+            image: l.image ?? "",
             quantity: l.quantity,
             price: l.price,
             lineTotal: l.lineTotal,
           })),
-          total,
+          subtotal: total,
+          deliveryCharge,
+          total: total + deliveryCharge,
         },
       });
-      const code = res?.code ?? "";
-      const summary = buildSummary(code);
+      const summary = buildSummary(res.orderId);
       clear();
-      setPlaced({ code, summary, proofUrl: proof?.url ?? null });
+      void refresh();
+      setPlaced({ orderId: res.orderId, summary, proofUrl: proof?.url ?? null });
     } catch (err) {
       setError(
         err instanceof Error
@@ -169,17 +168,16 @@ function CheckoutPage() {
         <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
         <h1 className="brand-title mt-4 text-4xl text-primary">Order placed</h1>
         <p className="mt-3 text-muted-foreground">
-          Your order code is{" "}
-          <span className="font-medium text-foreground">{placed.code}</span>. Keep it
-          safe — you can follow your order any time on the tracking page.
+          Your Order ID is{" "}
+          <span className="font-medium text-foreground">{placed.orderId}</span>. You can
+          follow it any time in My Orders.
         </p>
         <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            to="/track"
-            search={{ code: placed.code }}
+            to="/my-orders"
             className="rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
           >
-            Track my order
+            View My Orders
           </Link>
           <a
             href={waHref}
@@ -211,7 +209,7 @@ function CheckoutPage() {
             to="/menu"
             className="rounded-full border border-border px-6 py-2.5 text-sm text-foreground"
           >
-            Back to menu
+            Continue Shopping
           </Link>
         </div>
       </div>
@@ -236,6 +234,26 @@ function CheckoutPage() {
     );
   }
 
+  if (!loading && !signedIn) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
+        <UserRound className="mx-auto h-8 w-8 text-primary/70" />
+        <h1 className="brand-title mt-4 text-4xl text-primary">Sign in to continue</h1>
+        <p className="mt-3 text-muted-foreground">
+          We keep your orders in your account so you can check their status any time. It
+          only takes your name and phone number.
+        </p>
+        <Link
+          to="/signin"
+          search={{ next: "/checkout" }}
+          className="mt-6 inline-flex rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
+        >
+          Sign in
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
       <h1 className="brand-title text-4xl text-primary">Checkout</h1>
@@ -253,6 +271,14 @@ function CheckoutPage() {
               else void submit();
             }}
           >
+            <div className="rounded-lg border border-border/70 bg-background p-4 text-sm">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Ordering as
+              </p>
+              <p className="mt-1 font-medium text-foreground">{customer?.name}</p>
+              <p className="text-muted-foreground">{customer?.phone}</p>
+            </div>
+
             <fieldset>
               <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 How would you like to receive your order?
@@ -274,35 +300,6 @@ function CheckoutPage() {
                 />
               </div>
             </fieldset>
-
-            <Field label="Full name">
-              <input
-                required
-                maxLength={100}
-                value={details.name}
-                onChange={(e) => setDetails({ ...details, name: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
-            <Field label="Phone number">
-              <input
-                required
-                inputMode="tel"
-                maxLength={20}
-                value={details.phone}
-                onChange={(e) => setDetails({ ...details, phone: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
-            <Field label="Email (optional)">
-              <input
-                type="email"
-                maxLength={255}
-                value={details.email}
-                onChange={(e) => setDetails({ ...details, email: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
 
             {fulfilment === "delivery" && (
               <>
@@ -366,10 +363,12 @@ function CheckoutPage() {
                 />
               </Field>
             </div>
-            <Field label="Notes (optional)">
+
+            <Field label="Notes for the baker (optional)">
               <textarea
-                rows={3}
+                rows={2}
                 maxLength={1000}
+                placeholder="Message on the cake, allergies, packing requests…"
                 value={details.notes}
                 onChange={(e) => setDetails({ ...details, notes: e.target.value })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -385,17 +384,15 @@ function CheckoutPage() {
                   active={payment === "upi"}
                   onClick={() => setPayment("upi")}
                   icon={<QrCode className="h-4 w-4" />}
-                  title="UPI / QR Code"
-                  subtitle="Pay now by scanning our QR"
+                  title="UPI / QR code"
+                  subtitle={`Pay ${bakery.upiName} · upload screenshot`}
                 />
                 <Choice
                   active={payment === "cod"}
                   onClick={() => setPayment("cod")}
                   icon={<Banknote className="h-4 w-4" />}
-                  title="Cash on Delivery"
-                  subtitle={
-                    fulfilment === "pickup" ? "Pay when you pick up" : "Pay on delivery"
-                  }
+                  title={fulfilment === "pickup" ? "Cash on pickup" : "Cash on delivery"}
+                  subtitle="Pay when you receive your order"
                 />
               </div>
             </fieldset>
@@ -537,7 +534,7 @@ function Choice({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   subtitle: string;
 }) {
@@ -561,7 +558,7 @@ function Choice({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-muted-foreground">
