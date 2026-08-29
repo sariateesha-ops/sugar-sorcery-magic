@@ -7,9 +7,8 @@ import { signInCustomer } from "@/lib/customer.functions";
 import { useCustomer, type Customer } from "@/lib/customer-session";
 
 export const Route = createFileRoute("/signin")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    next: typeof search['next'] === "string" ? (search['next'] as string) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search['next'] === "string" ? { next: search['next'] as string } : {},
   head: () => ({
     meta: [
       { title: "Sign In — Sugar Sorcery" },
