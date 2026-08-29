@@ -18,6 +18,7 @@ import { Route as MyOrdersRouteImport } from './routes/my-orders'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as MyOrdersIndexRouteImport } from './routes/my-orders.index'
+import { Route as MyOrdersOrderIdRouteImport } from './routes/my-orders.$orderId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const MyOrdersIndexRoute = MyOrdersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MyOrdersRoute,
 } as any)
+const MyOrdersOrderIdRoute = MyOrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => MyOrdersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/my-orders': typeof MyOrdersRouteWithChildren
   '/profile': typeof ProfileRoute
   '/signin': typeof SigninRoute
+  '/my-orders/$orderId': typeof MyOrdersOrderIdRoute
   '/my-orders/': typeof MyOrdersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/menu': typeof MenuRoute
   '/profile': typeof ProfileRoute
   '/signin': typeof SigninRoute
+  '/my-orders/$orderId': typeof MyOrdersOrderIdRoute
   '/my-orders': typeof MyOrdersIndexRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/my-orders': typeof MyOrdersRouteWithChildren
   '/profile': typeof ProfileRoute
   '/signin': typeof SigninRoute
+  '/my-orders/$orderId': typeof MyOrdersOrderIdRoute
   '/my-orders/': typeof MyOrdersIndexRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/my-orders'
     | '/profile'
     | '/signin'
+    | '/my-orders/$orderId'
     | '/my-orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/menu'
     | '/profile'
     | '/signin'
+    | '/my-orders/$orderId'
     | '/my-orders'
   id:
     | '__root__'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/my-orders'
     | '/profile'
     | '/signin'
+    | '/my-orders/$orderId'
     | '/my-orders/'
   fileRoutesById: FileRoutesById
 }
@@ -209,14 +221,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyOrdersIndexRouteImport
       parentRoute: typeof MyOrdersRoute
     }
+    '/my-orders/$orderId': {
+      id: '/my-orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/my-orders/$orderId'
+      preLoaderRoute: typeof MyOrdersOrderIdRouteImport
+      parentRoute: typeof MyOrdersRoute
+    }
   }
 }
 
 interface MyOrdersRouteChildren {
+  MyOrdersOrderIdRoute: typeof MyOrdersOrderIdRoute
   MyOrdersIndexRoute: typeof MyOrdersIndexRoute
 }
 
 const MyOrdersRouteChildren: MyOrdersRouteChildren = {
+  MyOrdersOrderIdRoute: MyOrdersOrderIdRoute,
   MyOrdersIndexRoute: MyOrdersIndexRoute,
 }
 
