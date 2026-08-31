@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { adminOrderSchema, createOrderSchema } from "@/lib/order-schemas";
+import {
+  adminOrderSchema,
+  createOrderSchema,
+  uploadProofSchema,
+} from "@/lib/order-schemas";
 
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => createOrderSchema.parse(input))
@@ -34,6 +38,7 @@ export const createOrder = createServerFn({ method: "POST" })
         subtotal: data.subtotal,
         delivery_charge: data.deliveryCharge,
         total_amount: data.total,
+        payment_proof_url: data.paymentProofPath || null,
         status: "pending",
       })
       .select("id, order_id, status, total_amount, payment_method, created_at")
@@ -67,6 +72,52 @@ export const createOrder = createServerFn({ method: "POST" })
     };
   });
 
+export const uploadPaymentProof = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => uploadProofSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { verifyCustomerToken } = await import("@/lib/customer-token.server");
+    const session = await verifyCustomerToken(data.token);
+    if (!session) throw new Error("Please sign in before uploading the screenshot.");
+    if (!data.contentType.startsWith("image/"))
+      throw new Error("Please upload an image file.");
+
+    const binary = atob(data.dataBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+
+    const ext = (data.fileName.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+    const path = `${session.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("payment-proofs")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (error) throw new Error("Could not upload the screenshot. Please try again.");
+    return { path };
+  });
+
+export const deleteOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => adminOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (isAdmin !== true) throw new Error("Not allowed.");
+
+    const { data: order } = await context.supabase
+      .from("orders")
+      .select("id")
+      .eq("order_id", data.orderId.toUpperCase())
+      .maybeSingle();
+    if (!order) throw new Error("Order not found.");
+
+    await context.supabase.from("order_items").delete().eq("order_id", order.id);
+    const { error } = await context.supabase.from("orders").delete().eq("id", order.id);
+    if (error) throw new Error("Could not delete this order.");
+    return { deleted: true };
+  });
+
 export const listOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -89,7 +140,18 @@ export const getAdminOrder = createServerFn({ method: "POST" })
       .eq("order_id", data.orderId.toUpperCase())
       .maybeSingle();
     if (error) throw new Error("Not allowed to read this order.");
-    return row ?? null;
+    if (!row) return null;
+
+    let paymentProofUrl: string | null = null;
+    const proofPath = (row as { payment_proof_url?: string | null }).payment_proof_url;
+    if (proofPath) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: signed } = await supabaseAdmin.storage
+        .from("payment-proofs")
+        .createSignedUrl(proofPath, 60 * 60);
+      paymentProofUrl = signed?.signedUrl ?? null;
+    }
+    return { ...row, paymentProofUrl };
   });
 
 export const markOrderDelivered = createServerFn({ method: "POST" })
