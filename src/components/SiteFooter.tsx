@@ -1,9 +1,31 @@
-import { Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import logo from "@/assets/logo.asset.json";
 import { bakery } from "@/data/menu";
 
 export function SiteFooter() {
+  const navigate = useNavigate();
+  const taps = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hint, setHint] = useState(false);
+
+  // Hidden owner entrance: tap the bakery name in the footer strip 5 times.
+  function secretTap() {
+    taps.current += 1;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      taps.current = 0;
+      setHint(false);
+    }, 2000);
+    if (taps.current >= 3) setHint(true);
+    if (taps.current >= 5) {
+      taps.current = 0;
+      setHint(false);
+      void navigate({ to: "/admin/login" });
+    }
+  }
+
   return (
     <footer className="mt-20 border-t border-border/60 bg-secondary/40">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3">
@@ -83,7 +105,19 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
-        {bakery.name} — {bakery.menuTagline}
+        <span
+          onClick={secretTap}
+          className="cursor-default select-none"
+          aria-label={`${bakery.name} footer`}
+        >
+          {bakery.name}
+        </span>{" "}
+        — {bakery.menuTagline}
+        {hint && (
+          <span className="ml-2 normal-case tracking-normal text-primary">
+            owner login…
+          </span>
+        )}
       </div>
     </footer>
   );
