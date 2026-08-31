@@ -99,6 +99,7 @@ export type Database = {
           notes: string | null
           order_id: string
           payment_method: string
+          payment_proof_url: string | null
           pincode: string | null
           preferred_date: string | null
           preferred_time: string | null
@@ -120,6 +121,7 @@ export type Database = {
           notes?: string | null
           order_id?: string
           payment_method: string
+          payment_proof_url?: string | null
           pincode?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
@@ -141,6 +143,7 @@ export type Database = {
           notes?: string | null
           order_id?: string
           payment_method?: string
+          payment_proof_url?: string | null
           pincode?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
