@@ -22,6 +22,7 @@ export const createOrderSchema = z
     preferredTime: z.string().trim().min(3).max(20),
     notes: z.string().trim().max(1000).optional().or(z.literal("")),
     paymentMethod: z.enum(["upi", "cod"]),
+    paymentProofPath: z.string().trim().max(300).optional().or(z.literal("")),
     items: z.array(orderItemSchema).min(1).max(50),
     subtotal: z.number().min(1).max(1000000),
     deliveryCharge: z.number().min(0).max(100000),
@@ -50,6 +51,14 @@ export const updateNameSchema = z.object({
 export const myOrderSchema = z.object({
   token: z.string().min(10).max(2000),
   orderId: z.string().trim().min(3).max(40),
+});
+
+export const uploadProofSchema = z.object({
+  token: z.string().min(10).max(2000),
+  fileName: z.string().trim().min(1).max(200),
+  contentType: z.string().trim().min(3).max(100),
+  // base64 (no data: prefix) — capped to roughly 6MB of binary data
+  dataBase64: z.string().min(20).max(8_500_000),
 });
 
 export const adminOrderSchema = z.object({
