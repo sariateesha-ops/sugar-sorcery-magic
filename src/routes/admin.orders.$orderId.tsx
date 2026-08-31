@@ -1,10 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminOrder, markOrderDelivered } from "@/lib/orders.functions";
+import {
+  deleteOrder,
+  getAdminOrder,
+  markOrderDelivered,
+} from "@/lib/orders.functions";
 import { useAdminGate } from "@/lib/use-admin";
 import { formatPrice } from "@/lib/cart";
 import { StatusBadge, formatDate, formatTime } from "@/components/StatusBadge";
@@ -35,7 +39,10 @@ function AdminOrderDetails() {
   const queryClient = useQueryClient();
   const fetchOrder = useServerFn(getAdminOrder);
   const deliver = useServerFn(markOrderDelivered);
+  const removeOrder = useServerFn(deleteOrder);
+  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const query = useQuery({
     queryKey: ["admin-order", orderId],
@@ -52,6 +59,17 @@ function AdminOrderDetails() {
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
     },
     onError: () => toast.error("Could not update this order."),
+  });
+
+  const deletion = useMutation({
+    mutationFn: () => removeOrder({ data: { orderId } }),
+    onSuccess: async () => {
+      toast.success("Order deleted");
+      setConfirmingDelete(false);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      void navigate({ to: "/admin" });
+    },
+    onError: () => toast.error("Could not delete this order."),
   });
 
   if (gate.isLoading || query.isLoading) {
@@ -115,11 +133,42 @@ function AdminOrderDetails() {
         </Panel>
         <Panel title="Payment information">
           <p className="text-foreground">
-            {order.payment_method === "cod" ? "Cash on delivery" : "UPI"}
+            {order.payment_method === "cod"
+              ? order.fulfilment === "pickup"
+                ? "Cash on pickup"
+                : "Cash on delivery"
+              : "UPI / QR code"}
           </p>
           <p className="text-muted-foreground">
             {order.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
           </p>
+          {order.payment_method === "upi" && (
+            <div className="mt-3">
+              {order.paymentProofUrl ? (
+                <>
+                  <a href={order.paymentProofUrl} target="_blank" rel="noreferrer">
+                    <img
+                      src={order.paymentProofUrl}
+                      alt={`Payment screenshot for order ${order.order_id}`}
+                      className="max-h-64 w-auto rounded-lg border border-border/70 object-contain"
+                    />
+                  </a>
+                  <a
+                    href={order.paymentProofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex text-xs uppercase tracking-[0.16em] text-primary"
+                  >
+                    Open full screenshot
+                  </a>
+                </>
+              ) : (
+                <p className="text-muted-foreground">
+                  No payment screenshot uploaded for this order.
+                </p>
+              )}
+            </div>
+          )}
         </Panel>
         <Panel title="Delivery information">
           {order.fulfilment === "pickup" ? (
@@ -162,6 +211,7 @@ function AdminOrderDetails() {
                   {item.variant_label} · {formatPrice(Number(item.price))} ×{" "}
                   {item.quantity}
                 </p>
+                <p className="text-xs text-muted-foreground">ID: {item.product_id}</p>
               </div>
               <p className="text-sm text-foreground">
                 {formatPrice(Number(item.subtotal))}
@@ -195,7 +245,7 @@ function AdminOrderDetails() {
         <p className="mt-6 text-sm text-muted-foreground">Notes: {order.notes}</p>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         {order.status === "delivered" ? (
           <span className="inline-flex rounded-full bg-primary/10 px-6 py-2.5 text-sm uppercase tracking-[0.16em] text-primary">
             Delivered
@@ -209,7 +259,42 @@ function AdminOrderDetails() {
             Mark as Delivered
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setConfirmingDelete(true)}
+          className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-6 py-2.5 text-sm uppercase tracking-[0.16em] text-destructive"
+        >
+          <Trash2 className="h-4 w-4" /> Delete order
+        </button>
       </div>
+
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-foreground">
+              Delete order #{order.order_id} permanently? This cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                type="button"
+                disabled={deletion.isPending}
+                onClick={() => deletion.mutate()}
+                className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm text-destructive-foreground disabled:opacity-60"
+              >
+                {deletion.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Yes, delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-full border border-border px-5 py-2.5 text-sm text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">
