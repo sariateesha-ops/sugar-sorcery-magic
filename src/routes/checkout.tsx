@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { bakery } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
-import { createOrder } from "@/lib/orders.functions";
+import { createOrder, uploadPaymentProof } from "@/lib/orders.functions";
 import { useCustomer } from "@/lib/customer-session";
 import upiQr from "@/assets/upi-qr.jpeg.asset.json";
 
@@ -54,6 +54,7 @@ function CheckoutPage() {
   const { detailedLines, total, clear } = useCart();
   const { customer, token, signedIn, loading, refresh } = useCustomer();
   const placeOrder = useServerFn(createOrder);
+  const sendProof = useServerFn(uploadPaymentProof);
   const [fulfilment, setFulfilment] = useState<Fulfilment>("delivery");
   const [payment, setPayment] = useState<PaymentMethod>("upi");
   const [details, setDetails] = useState<Details>({
@@ -65,7 +66,10 @@ function CheckoutPage() {
     notes: "",
   });
   const [step, setStep] = useState<"details" | "payment">("details");
-  const [proof, setProof] = useState<{ name: string; url: string } | null>(null);
+  const [proof, setProof] = useState<{ name: string; url: string; path: string } | null>(
+    null,
+  );
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{
@@ -131,6 +135,7 @@ function CheckoutPage() {
           preferredTime: details.time,
           notes: details.notes,
           paymentMethod: payment,
+          paymentProofPath: payment === "upi" ? (proof?.path ?? "") : "",
           items: detailedLines.map((l) => ({
             productId: l.productId,
             name: l.name,
@@ -445,19 +450,60 @@ function CheckoutPage() {
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return setProof(null);
-                  if (!file.type.startsWith("image/")) return setProof(null);
-                  setProof({ name: file.name, url: URL.createObjectURL(file) });
+                  setProof(null);
+                  setError(null);
+                  if (!file) return;
+                  if (!file.type.startsWith("image/")) {
+                    setError("Please choose an image file.");
+                    return;
+                  }
+                  if (file.size > 6 * 1024 * 1024) {
+                    setError("Please choose an image smaller than 6 MB.");
+                    return;
+                  }
+                  if (!token) return;
+                  setUploading(true);
+                  void (async () => {
+                    try {
+                      const buffer = await file.arrayBuffer();
+                      const bytes = new Uint8Array(buffer);
+                      let binary = "";
+                      for (let i = 0; i < bytes.length; i += 1)
+                        binary += String.fromCharCode(bytes[i] as number);
+                      const res = await sendProof({
+                        data: {
+                          token,
+                          fileName: file.name,
+                          contentType: file.type,
+                          dataBase64: btoa(binary),
+                        },
+                      });
+                      setProof({
+                        name: file.name,
+                        url: URL.createObjectURL(file),
+                        path: res.path,
+                      });
+                    } catch {
+                      setError("Could not upload the screenshot. Please try again.");
+                    } finally {
+                      setUploading(false);
+                    }
+                  })();
                 }}
                 className="hidden"
               />
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-5 py-2.5 text-sm text-primary"
+                disabled={uploading}
+                className="inline-flex items-center gap-2 rounded-full border border-primary/30 px-5 py-2.5 text-sm text-primary disabled:opacity-50"
               >
                 <Upload className="h-4 w-4" />
-                {proof ? "Change screenshot" : "Upload screenshot"}
+                {uploading
+                  ? "Uploading…"
+                  : proof
+                    ? "Change screenshot"
+                    : "Upload screenshot"}
               </button>
               {proof && (
                 <div className="mt-4 flex items-center gap-3 rounded-lg border border-border/70 p-3">
@@ -480,7 +526,7 @@ function CheckoutPage() {
 
             <button
               type="button"
-              disabled={!proof || submitting}
+              disabled={!proof || submitting || uploading}
               onClick={() => void submit()}
               className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
