@@ -164,6 +164,14 @@ function OrderDetailsPage() {
       {order.notes && (
         <p className="mt-6 text-sm text-muted-foreground">Notes: {order.notes}</p>
       )}
+
+      <Link
+        to="/receipt/$orderId"
+        params={{ orderId }}
+        className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm uppercase tracking-[0.16em] text-primary-foreground"
+      >
+        <ReceiptText className="h-4 w-4" /> View Receipt
+      </Link>
     </div>
   );
 }
