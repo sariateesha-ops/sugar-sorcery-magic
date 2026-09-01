@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, ReceiptText } from "lucide-react";
 import { getMyOrder } from "@/lib/customer.functions";
 import { useCustomer } from "@/lib/customer-session";
 import { formatPrice } from "@/lib/cart";

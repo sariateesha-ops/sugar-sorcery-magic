@@ -102,6 +102,12 @@ export function SiteFooter() {
               Contact
             </Link>
           </div>
+          <Link
+            to="/admin/login"
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs uppercase tracking-[0.16em] text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" /> Admin Access
+          </Link>
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
