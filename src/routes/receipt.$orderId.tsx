@@ -216,8 +216,9 @@ function ReceiptPage() {
         )}
 
         <p className="mt-6 border-t border-border/60 pt-4 text-center text-xs text-muted-foreground">
-          Thank you for ordering from {bakery.name}. Keep this receipt as proof of your
-          order. For any query, WhatsApp {bakery.phone}.
+          Thank you for ordering from {bakery.name}. All orders are pre-orders and
+          require at least 24 hours notice. Keep this receipt as proof of your order.
+          For any query, WhatsApp {bakery.phone}.
         </p>
       </div>
     </div>
