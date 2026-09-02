@@ -292,12 +292,19 @@ function AdminDashboard() {
                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                   {formatDate(o.created_at)} · {formatTime(o.created_at)}
                 </p>
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <DeliverButton
                     status={o.status}
                     pending={mutation.isPending && confirming === o.order_id}
                     onClick={() => setConfirming(o.order_id)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(o.order_id)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-xs uppercase tracking-[0.14em] text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
                 </div>
               </div>
             ))}
