@@ -67,6 +67,18 @@ function AdminDashboard() {
     onError: () => toast.error("Could not update this order. Please try again."),
   });
 
+  const deletion = useMutation({
+    mutationFn: (orderId: string) => removeOrder({ data: { orderId } }),
+    onSuccess: async () => {
+      toast.success("Order deleted");
+      setConfirmingDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete this order."),
+  });
+
+
   const orders = ordersQuery.data ?? [];
   const stats = useMemo(() => {
     const pending = orders.filter((o) => o.status !== "delivered").length;
