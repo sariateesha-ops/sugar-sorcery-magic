@@ -2,10 +2,17 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IndianRupee, Loader2, LogOut, PackageCheck, Search } from "lucide-react";
+import {
+  IndianRupee,
+  Loader2,
+  LogOut,
+  PackageCheck,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { listOrders, markOrderDelivered } from "@/lib/orders.functions";
+import { deleteOrder, listOrders, markOrderDelivered } from "@/lib/orders.functions";
 import { useAdminGate } from "@/lib/use-admin";
 import { formatPrice } from "@/lib/cart";
 import { StatusBadge, formatDate, formatTime } from "@/components/StatusBadge";
