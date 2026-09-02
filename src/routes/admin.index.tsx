@@ -2,10 +2,17 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IndianRupee, Loader2, LogOut, PackageCheck, Search } from "lucide-react";
+import {
+  IndianRupee,
+  Loader2,
+  LogOut,
+  PackageCheck,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { listOrders, markOrderDelivered } from "@/lib/orders.functions";
+import { deleteOrder, listOrders, markOrderDelivered } from "@/lib/orders.functions";
 import { useAdminGate } from "@/lib/use-admin";
 import { formatPrice } from "@/lib/cart";
 import { StatusBadge, formatDate, formatTime } from "@/components/StatusBadge";
@@ -37,9 +44,11 @@ function AdminDashboard() {
   const queryClient = useQueryClient();
   const fetchOrders = useServerFn(listOrders);
   const deliver = useServerFn(markOrderDelivered);
+  const removeOrder = useServerFn(deleteOrder);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const ordersQuery = useQuery({
     queryKey: ["admin-orders"],
@@ -57,6 +66,18 @@ function AdminDashboard() {
     },
     onError: () => toast.error("Could not update this order. Please try again."),
   });
+
+  const deletion = useMutation({
+    mutationFn: (orderId: string) => removeOrder({ data: { orderId } }),
+    onSuccess: async () => {
+      toast.success("Order deleted");
+      setConfirmingDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete this order."),
+  });
+
 
   const orders = ordersQuery.data ?? [];
   const stats = useMemo(() => {
@@ -236,11 +257,22 @@ function AdminDashboard() {
                       <StatusBadge status={o.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <DeliverButton
-                        status={o.status}
-                        pending={mutation.isPending && confirming === o.order_id}
-                        onClick={() => setConfirming(o.order_id)}
-                      />
+                      <div className="flex items-center gap-2">
+                        <DeliverButton
+                          status={o.status}
+                          pending={mutation.isPending && confirming === o.order_id}
+                          onClick={() => setConfirming(o.order_id)}
+                        />
+                        <button
+                          type="button"
+                          title="Delete order"
+                          aria-label={`Delete order ${o.order_id}`}
+                          onClick={() => setConfirmingDelete(o.order_id)}
+                          className="rounded-full border border-destructive/40 p-2 text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -271,18 +303,54 @@ function AdminDashboard() {
                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                   {formatDate(o.created_at)} · {formatTime(o.created_at)}
                 </p>
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <DeliverButton
                     status={o.status}
                     pending={mutation.isPending && confirming === o.order_id}
                     onClick={() => setConfirming(o.order_id)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(o.order_id)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-4 py-2 text-xs uppercase tracking-[0.14em] text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </>
       )}
+
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-foreground">
+              Delete order #{confirmingDelete} permanently? This cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                type="button"
+                disabled={deletion.isPending}
+                onClick={() => deletion.mutate(confirmingDelete)}
+                className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm text-destructive-foreground disabled:opacity-60"
+              >
+                {deletion.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Yes, delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(null)}
+                className="rounded-full border border-border px-5 py-2.5 text-sm text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">

@@ -105,16 +105,27 @@ export const deleteOrder = createServerFn({ method: "POST" })
     });
     if (isAdmin !== true) throw new Error("Not allowed.");
 
-    const { data: order } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id")
+      .select("id, payment_proof_url")
       .eq("order_id", data.orderId.toUpperCase())
       .maybeSingle();
     if (!order) throw new Error("Order not found.");
 
-    await context.supabase.from("order_items").delete().eq("order_id", order.id);
-    const { error } = await context.supabase.from("orders").delete().eq("id", order.id);
+    const { error: itemsError } = await supabaseAdmin
+      .from("order_items")
+      .delete()
+      .eq("order_id", order.id);
+    if (itemsError) throw new Error("Could not delete this order's items.");
+
+    const { error } = await supabaseAdmin.from("orders").delete().eq("id", order.id);
     if (error) throw new Error("Could not delete this order.");
+
+    if (order.payment_proof_url) {
+      await supabaseAdmin.storage.from("payment-proofs").remove([order.payment_proof_url]);
+    }
     return { deleted: true };
   });
 
