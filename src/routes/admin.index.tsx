@@ -44,9 +44,11 @@ function AdminDashboard() {
   const queryClient = useQueryClient();
   const fetchOrders = useServerFn(listOrders);
   const deliver = useServerFn(markOrderDelivered);
+  const removeOrder = useServerFn(deleteOrder);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const ordersQuery = useQuery({
     queryKey: ["admin-orders"],
