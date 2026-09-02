@@ -257,11 +257,22 @@ function AdminDashboard() {
                       <StatusBadge status={o.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <DeliverButton
-                        status={o.status}
-                        pending={mutation.isPending && confirming === o.order_id}
-                        onClick={() => setConfirming(o.order_id)}
-                      />
+                      <div className="flex items-center gap-2">
+                        <DeliverButton
+                          status={o.status}
+                          pending={mutation.isPending && confirming === o.order_id}
+                          onClick={() => setConfirming(o.order_id)}
+                        />
+                        <button
+                          type="button"
+                          title="Delete order"
+                          aria-label={`Delete order ${o.order_id}`}
+                          onClick={() => setConfirmingDelete(o.order_id)}
+                          className="rounded-full border border-destructive/40 p-2 text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
