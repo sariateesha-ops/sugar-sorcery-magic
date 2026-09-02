@@ -323,6 +323,35 @@ function AdminDashboard() {
         </>
       )}
 
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-foreground">
+              Delete order #{confirmingDelete} permanently? This cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                type="button"
+                disabled={deletion.isPending}
+                onClick={() => deletion.mutate(confirmingDelete)}
+                className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm text-destructive-foreground disabled:opacity-60"
+              >
+                {deletion.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Yes, delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(null)}
+                className="rounded-full border border-border px-5 py-2.5 text-sm text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4">
           <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center">
