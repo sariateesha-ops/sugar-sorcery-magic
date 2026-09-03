@@ -127,7 +127,6 @@ function CheckoutPage() {
       const res = await placeOrder({
         data: {
           token,
-          email: details.email,
           fulfilment,
           address: fulfilment === "delivery" ? details.address : "",
           landmark: fulfilment === "delivery" ? details.landmark : "",
@@ -284,18 +283,6 @@ function CheckoutPage() {
               <p className="mt-1 font-medium text-foreground">{customer?.name}</p>
               <p className="text-muted-foreground">{customer?.phone}</p>
             </div>
-
-            <Field label="Email address (we send your order details and receipt here)">
-              <input
-                required
-                type="email"
-                maxLength={255}
-                placeholder="you@example.com"
-                value={details.email}
-                onChange={(e) => setDetails({ ...details, email: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </Field>
 
             <fieldset>
               <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
