@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, ShoppingBag, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import logo from "@/assets/logo.asset.json";
+import { logo } from "@/assets/brand";
 import { bakery } from "@/data/menu";
 import { useCart } from "@/lib/cart";
 import { useCustomer } from "@/lib/customer-session";

@@ -16,7 +16,7 @@ import { bakery } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
 import { createOrder, uploadPaymentProof } from "@/lib/orders.functions";
 import { useCustomer } from "@/lib/customer-session";
-import upiQr from "@/assets/upi-qr.jpeg.asset.json";
+import { upiQr } from "@/assets/brand";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({

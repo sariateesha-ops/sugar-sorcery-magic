@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
-import logo from "@/assets/logo.asset.json";
+import { logo } from "@/assets/brand";
 import { bakery, menu } from "@/data/menu";
 
 export const Route = createFileRoute("/")({
