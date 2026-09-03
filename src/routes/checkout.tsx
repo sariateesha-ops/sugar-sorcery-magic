@@ -42,7 +42,6 @@ type Fulfilment = "pickup" | "delivery";
 type PaymentMethod = "upi" | "cod";
 
 type Details = {
-  email: string;
   address: string;
   landmark: string;
   pincode: string;
@@ -50,23 +49,6 @@ type Details = {
   time: string;
   notes: string;
 };
-
-function CheckoutPage() {
-  const { detailedLines, total, clear } = useCart();
-  const { customer, token, signedIn, loading, refresh } = useCustomer();
-  const placeOrder = useServerFn(createOrder);
-  const sendProof = useServerFn(uploadPaymentProof);
-  const [fulfilment, setFulfilment] = useState<Fulfilment>("delivery");
-  const [payment, setPayment] = useState<PaymentMethod>("upi");
-  const [details, setDetails] = useState<Details>({
-    email: "",
-    address: "",
-    landmark: "",
-    pincode: "",
-    date: "",
-    time: "",
-    notes: "",
-  });
   const [step, setStep] = useState<"details" | "payment">("details");
   const [proof, setProof] = useState<{ name: string; url: string; path: string } | null>(
     null,

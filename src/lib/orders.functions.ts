@@ -27,7 +27,7 @@ export const createOrder = createServerFn({ method: "POST" })
         customer_id: customer.id,
         customer_name: customer.name,
         customer_phone: customer.phone,
-        customer_email: data.email,
+        
         fulfilment: data.fulfilment,
         delivery_address: data.fulfilment === "delivery" ? data.address || null : null,
         landmark: data.fulfilment === "delivery" ? data.landmark || null : null,
@@ -47,7 +47,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     if (error || !order) throw new Error("Could not save the order. Please try again.");
 
-    await supabaseAdmin.from("customers").update({ email: data.email }).eq("id", customer.id);
+    
 
     const { error: itemsError } = await supabaseAdmin.from("order_items").insert(
       data.items.map((item) => ({
