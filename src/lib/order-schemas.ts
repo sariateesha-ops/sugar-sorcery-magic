@@ -14,7 +14,6 @@ export const orderItemSchema = z.object({
 export const createOrderSchema = z
   .object({
     token: z.string().min(10).max(2000),
-    email: z.string().trim().toLowerCase().email("Enter a valid email address").max(255),
     fulfilment: z.enum(["pickup", "delivery"]),
     address: z.string().trim().max(500).optional().or(z.literal("")),
     landmark: z.string().trim().max(200).optional().or(z.literal("")),
