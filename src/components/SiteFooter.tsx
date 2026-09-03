@@ -8,7 +8,7 @@ import {
   Phone,
   ShieldCheck,
 } from "lucide-react";
-import logo from "@/assets/logo.asset.json";
+import { logo } from "@/assets/brand";
 import { bakery } from "@/data/menu";
 
 export function SiteFooter() {

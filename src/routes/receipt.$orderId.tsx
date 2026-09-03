@@ -6,7 +6,7 @@ import { getMyOrder } from "@/lib/customer.functions";
 import { useCustomer } from "@/lib/customer-session";
 import { formatPrice } from "@/lib/cart";
 import { StatusBadge, formatDate, formatTime } from "@/components/StatusBadge";
-import logo from "@/assets/logo.asset.json";
+import { logo } from "@/assets/brand";
 import { bakery } from "@/data/menu";
 
 export const Route = createFileRoute("/receipt/$orderId")({
