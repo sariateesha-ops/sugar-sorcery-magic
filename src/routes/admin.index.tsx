@@ -498,3 +498,31 @@ function Blocked({
     </div>
   );
 }
+
+function ProofThumb({
+  order,
+}: {
+  order: { payment_method: string; order_id: string; paymentProofUrl?: string | null };
+}) {
+  if (order.payment_method !== "upi") {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  if (!order.paymentProofUrl) {
+    return <span className="text-xs text-muted-foreground">No screenshot</span>;
+  }
+  return (
+    <a
+      href={order.paymentProofUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
+    >
+      <img
+        src={order.paymentProofUrl}
+        alt={`Payment screenshot for order ${order.order_id}`}
+        className="h-12 w-12 rounded-md border border-border/70 object-cover"
+      />
+      View
+    </a>
+  );
+}

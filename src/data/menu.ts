@@ -299,7 +299,7 @@ export const bakery = {
   name: "Sugar Sorcery",
   tagline: "Magic in Every Bite",
   menuTagline: "Spellbindingly Delicious",
-  address: "Kharghar, Navi Mumbai",
+  address: "A503/504, Mahavir Shradha, Plot 11B, Sector 7, Kharghar, Navi Mumbai",
   email: "ishitagupte00@gmail.com",
   phone: "7710865577",
   phoneHref: "tel:+917710865577",
