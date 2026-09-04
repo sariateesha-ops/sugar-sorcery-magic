@@ -334,6 +334,9 @@ function AdminDashboard() {
                     ))}
                   </ul>
                 )}
+                <div className="mt-2">
+                  <ProofThumb order={o} />
+                </div>
 
                 <p className="mt-2 text-sm">
                   {formatPrice(Number(o.total_amount))} ·{" "}
