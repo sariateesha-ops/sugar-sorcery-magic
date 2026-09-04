@@ -141,7 +141,29 @@ export const listOrders = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error("Not allowed to read orders.");
-    return data ?? [];
+    const rows = data ?? [];
+
+    const paths = rows
+      .map((r) => (r as { payment_proof_url?: string | null }).payment_proof_url)
+      .filter((p): p is string => Boolean(p));
+
+    let signedByPath = new Map<string, string>();
+    if (paths.length > 0) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: signed } = await supabaseAdmin.storage
+        .from("payment-proofs")
+        .createSignedUrls(paths, 60 * 60);
+      signedByPath = new Map(
+        (signed ?? [])
+          .filter((s) => s.signedUrl && s.path)
+          .map((s) => [s.path as string, s.signedUrl]),
+      );
+    }
+
+    return rows.map((r) => {
+      const path = (r as { payment_proof_url?: string | null }).payment_proof_url;
+      return { ...r, paymentProofUrl: path ? signedByPath.get(path) ?? null : null };
+    });
   });
 
 export const getAdminOrder = createServerFn({ method: "POST" })
