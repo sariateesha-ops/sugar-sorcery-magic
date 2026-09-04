@@ -155,8 +155,10 @@ export const listOrders = createServerFn({ method: "POST" })
         .createSignedUrls(paths, 60 * 60);
       signedByPath = new Map(
         (signed ?? [])
-          .filter((s) => s.signedUrl && s.path)
-          .map((s) => [s.path as string, s.signedUrl]),
+          .filter((s): s is { path: string; signedUrl: string; error: null } =>
+            Boolean(s.signedUrl && s.path),
+          )
+          .map((s) => [s.path, s.signedUrl] as const),
       );
     }
 
