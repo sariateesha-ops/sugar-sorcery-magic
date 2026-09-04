@@ -323,6 +323,14 @@ function AdminDashboard() {
                 </div>
                 <p className="mt-2 text-sm text-foreground">{o.customer_name}</p>
                 <p className="text-sm text-muted-foreground">{o.customer_phone}</p>
+                {itemLines(o).length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-sm text-foreground">
+                    {itemLines(o).map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+
                 <p className="mt-2 text-sm">
                   {formatPrice(Number(o.total_amount))} ·{" "}
                   {o.payment_method === "cod" ? "Cash" : "UPI"}
