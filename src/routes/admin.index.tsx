@@ -230,6 +230,8 @@ function AdminDashboard() {
                 <tr>
                   <th className="px-4 py-3">Order ID</th>
                   <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Items</th>
+
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Payment</th>
