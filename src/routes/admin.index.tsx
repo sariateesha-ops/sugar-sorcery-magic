@@ -253,6 +253,20 @@ function AdminDashboard() {
                       </Link>
                     </td>
                     <td className="px-4 py-3">{o.customer_name}</td>
+                    <td className="max-w-64 px-4 py-3">
+                      {itemLines(o).length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {itemLines(o).map((line) => (
+                            <li key={line} className="text-foreground">
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+
                     <td className="px-4 py-3">{o.customer_phone}</td>
                     <td className="px-4 py-3">
                       {formatPrice(Number(o.total_amount))}
