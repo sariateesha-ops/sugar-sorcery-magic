@@ -80,6 +80,15 @@ function AdminDashboard() {
 
 
   const orders = ordersQuery.data ?? [];
+
+  function itemLines(o: (typeof orders)[number]) {
+    const items = (o as { order_items?: Array<{ product_name: string; variant_label: string | null; quantity: number }> }).order_items ?? [];
+    return items.map(
+      (i) =>
+        `${i.quantity} × ${i.product_name}${i.variant_label ? ` (${i.variant_label})` : ""}`,
+    );
+  }
+
   const stats = useMemo(() => {
     const pending = orders.filter((o) => o.status !== "delivered").length;
     return {
