@@ -80,6 +80,15 @@ function AdminDashboard() {
 
 
   const orders = ordersQuery.data ?? [];
+
+  function itemLines(o: (typeof orders)[number]) {
+    const items = (o as { order_items?: Array<{ product_name: string; variant_label: string | null; quantity: number }> }).order_items ?? [];
+    return items.map(
+      (i) =>
+        `${i.quantity} × ${i.product_name}${i.variant_label ? ` (${i.variant_label})` : ""}`,
+    );
+  }
+
   const stats = useMemo(() => {
     const pending = orders.filter((o) => o.status !== "delivered").length;
     return {
@@ -101,7 +110,9 @@ function AdminDashboard() {
       return (
         o.order_id.toLowerCase().includes(q) ||
         o.customer_name.toLowerCase().includes(q) ||
-        o.customer_phone.toLowerCase().includes(q)
+        o.customer_phone.toLowerCase().includes(q) ||
+        itemLines(o).join(" ").toLowerCase().includes(q)
+
       );
     });
   }, [orders, search, filter]);
@@ -219,6 +230,8 @@ function AdminDashboard() {
                 <tr>
                   <th className="px-4 py-3">Order ID</th>
                   <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Items</th>
+
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Payment</th>
@@ -240,6 +253,20 @@ function AdminDashboard() {
                       </Link>
                     </td>
                     <td className="px-4 py-3">{o.customer_name}</td>
+                    <td className="max-w-64 px-4 py-3">
+                      {itemLines(o).length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {itemLines(o).map((line) => (
+                            <li key={line} className="text-foreground">
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+
                     <td className="px-4 py-3">{o.customer_phone}</td>
                     <td className="px-4 py-3">
                       {formatPrice(Number(o.total_amount))}
@@ -296,6 +323,14 @@ function AdminDashboard() {
                 </div>
                 <p className="mt-2 text-sm text-foreground">{o.customer_name}</p>
                 <p className="text-sm text-muted-foreground">{o.customer_phone}</p>
+                {itemLines(o).length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-sm text-foreground">
+                    {itemLines(o).map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+
                 <p className="mt-2 text-sm">
                   {formatPrice(Number(o.total_amount))} ·{" "}
                   {o.payment_method === "cod" ? "Cash" : "UPI"}
