@@ -276,6 +276,9 @@ function AdminDashboard() {
                       {o.payment_method === "cod" ? "Cash" : "UPI"}
                     </td>
                     <td className="px-4 py-3">
+                      <ProofThumb order={o} />
+                    </td>
+                    <td className="px-4 py-3">
                       {formatDate(o.created_at)}
                       <span className="block text-xs text-muted-foreground">
                         {formatTime(o.created_at)}
