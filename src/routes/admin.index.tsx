@@ -110,7 +110,9 @@ function AdminDashboard() {
       return (
         o.order_id.toLowerCase().includes(q) ||
         o.customer_name.toLowerCase().includes(q) ||
-        o.customer_phone.toLowerCase().includes(q)
+        o.customer_phone.toLowerCase().includes(q) ||
+        itemLines(o).join(" ").toLowerCase().includes(q)
+
       );
     });
   }, [orders, search, filter]);
