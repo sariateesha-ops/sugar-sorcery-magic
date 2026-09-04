@@ -153,13 +153,9 @@ export const listOrders = createServerFn({ method: "POST" })
       const { data: signed } = await supabaseAdmin.storage
         .from("payment-proofs")
         .createSignedUrls(paths, 60 * 60);
-      signedByPath = new Map(
-        (signed ?? [])
-          .filter((s): s is { path: string; signedUrl: string; error: null } =>
-            Boolean(s.signedUrl && s.path),
-          )
-          .map((s) => [s.path, s.signedUrl] as const),
-      );
+      for (const s of signed ?? []) {
+        if (s.path && s.signedUrl) signedByPath.set(s.path, s.signedUrl);
+      }
     }
 
     return rows.map((r) => {
