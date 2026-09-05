@@ -25,7 +25,11 @@ function fromBase64Url(value: string) {
 }
 
 async function getKey() {
-  const secret = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  // Prefer a dedicated signing secret (works on any host, e.g. Vercel).
+  // Falls back to the service role key so existing sessions keep working.
+  const secret =
+    process.env["CUSTOMER_SESSION_SECRET"] ||
+    process.env["SUPABASE_SERVICE_ROLE_KEY"];
   if (!secret) throw new Error("Server is not configured for customer sessions.");
   return crypto.subtle.importKey(
     "raw",
