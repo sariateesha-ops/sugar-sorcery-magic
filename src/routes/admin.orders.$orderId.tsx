@@ -130,6 +130,16 @@ function AdminOrderDetails() {
         <Panel title="Customer information">
           <p className="text-foreground">{order.customer_name}</p>
           <p className="text-muted-foreground">{order.customer_phone}</p>
+          {(() => {
+            const email =
+              (order as { customer_email?: string | null }).customer_email ??
+              (order as { customers?: { email?: string | null } | null }).customers?.email;
+            return email ? (
+              <p className="text-muted-foreground">{email}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground/70">No email on record</p>
+            );
+          })()}
         </Panel>
         <Panel title="Payment information">
           <p className="text-foreground">
