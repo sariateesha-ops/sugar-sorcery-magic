@@ -170,7 +170,7 @@ export const getAdminOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("orders")
-      .select("*, order_items(*)")
+      .select("*, order_items(*), customers(email)")
       .eq("order_id", data.orderId.toUpperCase())
       .maybeSingle();
     if (error) throw new Error("Not allowed to read this order.");
