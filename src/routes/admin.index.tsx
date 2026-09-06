@@ -273,7 +273,7 @@ function AdminDashboard() {
                       {formatPrice(Number(o.total_amount))}
                     </td>
                     <td className="px-4 py-3 uppercase">
-                      {o.payment_method === "cod" ? "Cash" : "UPI"}
+                      {"UPI"}
                     </td>
                     <td className="px-4 py-3">
                       <ProofThumb order={o} />
@@ -340,7 +340,7 @@ function AdminDashboard() {
 
                 <p className="mt-2 text-sm">
                   {formatPrice(Number(o.total_amount))} ·{" "}
-                  {o.payment_method === "cod" ? "Cash" : "UPI"}
+                  {"UPI"}
                 </p>
                 <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
                   {formatDate(o.created_at)} · {formatTime(o.created_at)}

@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Banknote,
   CheckCircle2,
   MessageCircle,
   QrCode,
@@ -39,7 +38,7 @@ export const Route = createFileRoute("/checkout")({
 });
 
 type Fulfilment = "pickup" | "delivery";
-type PaymentMethod = "upi" | "cod";
+type PaymentMethod = "upi";
 
 type Details = {
   address: string;
@@ -111,9 +110,9 @@ function CheckoutPage() {
       `Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} time: ${details.time}`,
       details.notes ? `Notes: ${details.notes}` : "",
       ``,
-      payment === "upi"
-        ? `Payment: Paid via UPI (${bakery.upiId}) — payment screenshot attached in this chat`
-        : `Payment: Cash on ${fulfilment === "pickup" ? "pickup" : "delivery"}`,
+      `Payment: Paid via UPI (${bakery.upiId}) — payment screenshot attached in this chat`,
+      ``,
+      deliveryNote,
     ]
       .filter(Boolean)
       .join("\n");
@@ -196,6 +195,9 @@ function CheckoutPage() {
         <p className="mt-4 text-sm text-muted-foreground">
           Tap “Send details on WhatsApp” so the bakery receives your complete order
           {placed.proofUrl ? " — please also attach your payment screenshot" : ""}.
+        </p>
+        <p className="mx-auto mt-6 max-w-xl rounded-lg border border-primary/25 bg-primary/5 p-4 text-left text-xs leading-relaxed text-muted-foreground">
+          {deliveryNote}
         </p>
         <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border/70 bg-card p-5 text-left text-sm">
           {placed.summary}

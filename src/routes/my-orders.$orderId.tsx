@@ -91,7 +91,7 @@ function OrderDetailsPage() {
         </Card>
         <Card title="Payment">
           <p className="text-foreground">
-            {order.payment_method === "cod" ? "Cash on delivery" : "UPI"}
+            {"UPI / QR code"}
           </p>
           <p className="text-muted-foreground">
             {order.fulfilment === "pickup" ? "Self pickup" : "Delivery"}

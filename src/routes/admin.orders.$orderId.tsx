@@ -143,16 +143,12 @@ function AdminOrderDetails() {
         </Panel>
         <Panel title="Payment information">
           <p className="text-foreground">
-            {order.payment_method === "cod"
-              ? order.fulfilment === "pickup"
-                ? "Cash on pickup"
-                : "Cash on delivery"
-              : "UPI / QR code"}
+            UPI / QR code
           </p>
           <p className="text-muted-foreground">
             {order.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
           </p>
-          {order.payment_method === "upi" && (
+          {(
             <div className="mt-3">
               {order.paymentProofUrl ? (
                 <>
@@ -239,7 +235,7 @@ function AdminOrderDetails() {
             <dd>
               {Number(order.delivery_charge) > 0
                 ? formatPrice(Number(order.delivery_charge))
-                : "Free"}
+                : "Notified on WhatsApp"}
             </dd>
           </div>
           <div className="flex justify-between pt-2 text-base">
