@@ -177,23 +177,32 @@ function AdminOrderDetails() {
           )}
         </Panel>
         <Panel title="Delivery information">
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            {order.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
+          </p>
           {order.fulfilment === "pickup" ? (
-            <p className="text-muted-foreground">Self pickup — no address needed.</p>
+            <p className="mt-1 text-muted-foreground">
+              Self pickup — no address needed.
+            </p>
           ) : (
             <>
-              <p className="text-foreground">{order.delivery_address ?? "—"}</p>
-              {order.landmark && (
-                <p className="text-muted-foreground">Landmark: {order.landmark}</p>
-              )}
-              {order.pincode && (
-                <p className="text-muted-foreground">Pincode: {order.pincode}</p>
-              )}
+              <p className="mt-1 text-foreground">
+                {order.delivery_address || "No address saved"}
+              </p>
+              <p className="text-muted-foreground">
+                Landmark: {order.landmark || "—"}
+              </p>
+              <p className="text-muted-foreground">Pincode: {order.pincode || "—"}</p>
             </>
           )}
         </Panel>
-        <Panel title="Preferred slot">
-          <p className="text-foreground">{order.preferred_date ?? "—"}</p>
-          <p className="text-muted-foreground">{order.preferred_time ?? ""}</p>
+        <Panel title="Preferred date & time">
+          <p className="text-foreground">
+            {order.preferred_date ? formatDate(order.preferred_date) : "Not specified"}
+          </p>
+          <p className="text-muted-foreground">
+            {order.preferred_time || "No time specified"}
+          </p>
         </Panel>
       </div>
 
