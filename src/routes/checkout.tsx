@@ -384,23 +384,20 @@ function CheckoutPage() {
               <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Payment method
               </legend>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <Choice
-                  active={payment === "upi"}
+                  active
                   onClick={() => setPayment("upi")}
                   icon={<QrCode className="h-4 w-4" />}
                   title="UPI / QR code"
                   subtitle={`Pay ${bakery.upiName} · upload screenshot`}
                 />
-                <Choice
-                  active={payment === "cod"}
-                  onClick={() => setPayment("cod")}
-                  icon={<Banknote className="h-4 w-4" />}
-                  title={fulfilment === "pickup" ? "Cash on pickup" : "Cash on delivery"}
-                  subtitle="Pay when you receive your order"
-                />
               </div>
             </fieldset>
+
+            <p className="rounded-lg border border-primary/25 bg-primary/5 p-4 text-xs leading-relaxed text-muted-foreground">
+              {deliveryNote}
+            </p>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -409,11 +406,7 @@ function CheckoutPage() {
               disabled={submitting}
               className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {payment === "upi"
-                ? `Continue to payment · ${formatPrice(total)}`
-                : submitting
-                  ? "Placing order…"
-                  : `Place order · ${formatPrice(total)}`}
+              {`Continue to payment · ${formatPrice(total)}`}
             </button>
           </form>
         ) : (
