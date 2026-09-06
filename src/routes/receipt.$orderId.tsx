@@ -7,7 +7,7 @@ import { useCustomer } from "@/lib/customer-session";
 import { formatPrice } from "@/lib/cart";
 import { StatusBadge, formatDate, formatTime } from "@/components/StatusBadge";
 import { logo } from "@/assets/brand";
-import { bakery } from "@/data/menu";
+import { bakery, deliveryNote } from "@/data/menu";
 
 export const Route = createFileRoute("/receipt/$orderId")({
   head: () => ({
@@ -129,11 +129,7 @@ function ReceiptPage() {
               Payment
             </p>
             <p className="mt-1 text-foreground">
-              {order.payment_method === "cod"
-                ? order.fulfilment === "pickup"
-                  ? "Cash on pickup"
-                  : "Cash on delivery"
-                : `UPI · ${bakery.upiId}`}
+              {`UPI · ${bakery.upiId}`}
             </p>
             <p className="text-muted-foreground">
               {order.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
@@ -202,7 +198,7 @@ function ReceiptPage() {
             <dd className="text-foreground">
               {Number(order.delivery_charge) > 0
                 ? formatPrice(Number(order.delivery_charge))
-                : "Free"}
+                : "Notified on WhatsApp"}
             </dd>
           </div>
           <div className="flex justify-between border-t border-border/60 pt-3 text-base">
@@ -214,6 +210,10 @@ function ReceiptPage() {
         {order.notes && (
           <p className="mt-5 text-sm text-muted-foreground">Notes: {order.notes}</p>
         )}
+
+        <p className="mt-5 rounded-lg border border-border/60 bg-secondary/40 p-4 text-xs leading-relaxed text-muted-foreground">
+          {deliveryNote}
+        </p>
 
         <p className="mt-6 border-t border-border/60 pt-4 text-center text-xs text-muted-foreground">
           Thank you for ordering from {bakery.name}. All orders are pre-orders and

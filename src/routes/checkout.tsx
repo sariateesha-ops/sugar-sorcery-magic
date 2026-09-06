@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Banknote,
   CheckCircle2,
   MessageCircle,
   QrCode,
@@ -12,7 +11,7 @@ import {
   Upload,
   UserRound,
 } from "lucide-react";
-import { bakery } from "@/data/menu";
+import { bakery, deliveryNote } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
 import { createOrder, uploadPaymentProof } from "@/lib/orders.functions";
 import { useCustomer } from "@/lib/customer-session";
@@ -25,13 +24,13 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI or cash on delivery, and follow it in My Orders.",
+          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI / QR code, and follow it in My Orders.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
       {
         property: "og:description",
         content:
-          "Choose self pickup or delivery, pay by UPI or cash on delivery, and follow your Sugar Sorcery pre-order in My Orders.",
+          "Choose self pickup or delivery, pay by UPI / QR code, and follow your Sugar Sorcery pre-order in My Orders.",
       },
     ],
   }),
@@ -39,7 +38,7 @@ export const Route = createFileRoute("/checkout")({
 });
 
 type Fulfilment = "pickup" | "delivery";
-type PaymentMethod = "upi" | "cod";
+type PaymentMethod = "upi";
 
 type Details = {
   address: string;
@@ -111,9 +110,9 @@ function CheckoutPage() {
       `Preferred ${fulfilment === "pickup" ? "pickup" : "delivery"} time: ${details.time}`,
       details.notes ? `Notes: ${details.notes}` : "",
       ``,
-      payment === "upi"
-        ? `Payment: Paid via UPI (${bakery.upiId}) — payment screenshot attached in this chat`
-        : `Payment: Cash on ${fulfilment === "pickup" ? "pickup" : "delivery"}`,
+      `Payment: Paid via UPI (${bakery.upiId}) — payment screenshot attached in this chat`,
+      ``,
+      deliveryNote,
     ]
       .filter(Boolean)
       .join("\n");
@@ -196,6 +195,9 @@ function CheckoutPage() {
         <p className="mt-4 text-sm text-muted-foreground">
           Tap “Send details on WhatsApp” so the bakery receives your complete order
           {placed.proofUrl ? " — please also attach your payment screenshot" : ""}.
+        </p>
+        <p className="mx-auto mt-6 max-w-xl rounded-lg border border-primary/25 bg-primary/5 p-4 text-left text-xs leading-relaxed text-muted-foreground">
+          {deliveryNote}
         </p>
         <pre className="mt-6 whitespace-pre-wrap rounded-xl border border-border/70 bg-card p-5 text-left text-sm">
           {placed.summary}
@@ -384,23 +386,20 @@ function CheckoutPage() {
               <legend className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Payment method
               </legend>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <Choice
-                  active={payment === "upi"}
+                  active
                   onClick={() => setPayment("upi")}
                   icon={<QrCode className="h-4 w-4" />}
                   title="UPI / QR code"
                   subtitle={`Pay ${bakery.upiName} · upload screenshot`}
                 />
-                <Choice
-                  active={payment === "cod"}
-                  onClick={() => setPayment("cod")}
-                  icon={<Banknote className="h-4 w-4" />}
-                  title={fulfilment === "pickup" ? "Cash on pickup" : "Cash on delivery"}
-                  subtitle="Pay when you receive your order"
-                />
               </div>
             </fieldset>
+
+            <p className="rounded-lg border border-primary/25 bg-primary/5 p-4 text-xs leading-relaxed text-muted-foreground">
+              {deliveryNote}
+            </p>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -409,11 +408,7 @@ function CheckoutPage() {
               disabled={submitting}
               className="w-full rounded-full bg-primary px-6 py-3 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {payment === "upi"
-                ? `Continue to payment · ${formatPrice(total)}`
-                : submitting
-                  ? "Placing order…"
-                  : `Place order · ${formatPrice(total)}`}
+              {`Continue to payment · ${formatPrice(total)}`}
             </button>
           </form>
         ) : (

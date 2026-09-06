@@ -21,7 +21,7 @@ export const createOrderSchema = z
     preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     preferredTime: z.string().trim().min(3).max(20),
     notes: z.string().trim().max(1000).optional().or(z.literal("")),
-    paymentMethod: z.enum(["upi", "cod"]),
+    paymentMethod: z.enum(["upi"]),
     paymentProofPath: z.string().trim().max(300).optional().or(z.literal("")),
     items: z.array(orderItemSchema).min(1).max(50),
     subtotal: z.number().min(1).max(1000000),
