@@ -12,7 +12,7 @@ import {
   Upload,
   UserRound,
 } from "lucide-react";
-import { bakery } from "@/data/menu";
+import { bakery, deliveryNote } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
 import { createOrder, uploadPaymentProof } from "@/lib/orders.functions";
 import { useCustomer } from "@/lib/customer-session";
