@@ -295,6 +295,9 @@ export function findProduct(id: string): Product | undefined {
   return allProducts.find((p) => p.id === id);
 }
 
+export const deliveryNote =
+  "Note: Product payment can be made through the UPI QR code. For deliveries within the state, we use Rapido, and for deliveries to other states, we use other suitable delivery services. Delivery charges depend on the location and will be notified to the customer via WhatsApp. Delivery charges must be paid separately by the customer.";
+
 export const bakery = {
   name: "Sugar Sorcery",
   tagline: "Magic in Every Bite",
