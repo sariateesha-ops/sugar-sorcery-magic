@@ -37,7 +37,7 @@ Phone / WhatsApp: ${bakery.phone}
 Email: ${bakery.email}
 Instagram: ${bakery.instagram}
 Fulfilment options at checkout: Self Pickup or Delivery (delivery needs full address, landmark and pincode).
-Payment options at checkout: UPI / QR code (UPI ID ${bakery.upiId}, ${bakery.upiName}) or Cash on Delivery.
+Payment options at checkout: UPI / QR code (UPI ID ${bakery.upiId}, ${bakery.upiName}) only (payment screenshot must be uploaded). Cash on delivery is not available. Delivery charges depend on location (Rapido within the state, other services for other states) and are notified on WhatsApp and paid separately by the customer.
 After an order is placed the customer gets an order code and can follow it on the Track Order page. Statuses: Order Placed, Order Confirmed, Preparing, Ready for Pickup / Out for Delivery, Delivered / Picked Up.
 
 MENU (all prices in Indian Rupees):

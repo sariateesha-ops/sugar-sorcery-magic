@@ -130,7 +130,7 @@ function MyOrdersPage() {
                     {formatPrice(Number(order.total_amount))}
                   </span>
                   <span className="uppercase tracking-[0.16em] text-muted-foreground">
-                    {order.payment_method === "cod" ? "Cash" : "UPI"}
+                    {"UPI"}
                   </span>
                 </div>
               </Link>

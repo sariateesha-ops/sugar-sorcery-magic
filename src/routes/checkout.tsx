@@ -24,13 +24,13 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI or cash on delivery, and follow it in My Orders.",
+          "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI / QR code, and follow it in My Orders.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
       {
         property: "og:description",
         content:
-          "Choose self pickup or delivery, pay by UPI or cash on delivery, and follow your Sugar Sorcery pre-order in My Orders.",
+          "Choose self pickup or delivery, pay by UPI / QR code, and follow your Sugar Sorcery pre-order in My Orders.",
       },
     ],
   }),
