@@ -233,6 +233,7 @@ function AdminDashboard() {
                   <th className="px-4 py-3">Items</th>
 
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Delivery & slot</th>
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Payment</th>
                   <th className="px-4 py-3">Screenshot</th>
@@ -269,6 +270,22 @@ function AdminDashboard() {
                     </td>
 
                     <td className="px-4 py-3">{o.customer_phone}</td>
+                    <td className="max-w-64 px-4 py-3 text-xs">
+                      <span className="uppercase tracking-[0.14em] text-muted-foreground">
+                        {o.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
+                      </span>
+                      {o.fulfilment !== "pickup" && (
+                        <span className="mt-1 block text-foreground">
+                          {o.delivery_address || "No address"}
+                          {o.landmark ? ` · ${o.landmark}` : ""}
+                          {o.pincode ? ` · ${o.pincode}` : ""}
+                        </span>
+                      )}
+                      <span className="mt-1 block text-muted-foreground">
+                        {o.preferred_date ? formatDate(o.preferred_date) : "No date"}
+                        {o.preferred_time ? ` · ${o.preferred_time}` : ""}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       {formatPrice(Number(o.total_amount))}
                     </td>
@@ -338,6 +355,16 @@ function AdminDashboard() {
                   <ProofThumb order={o} />
                 </div>
 
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {o.fulfilment === "pickup" ? "Self pickup" : "Delivery"}
+                  {o.fulfilment !== "pickup" && o.delivery_address
+                    ? ` · ${o.delivery_address}${o.landmark ? ` · ${o.landmark}` : ""}${o.pincode ? ` · ${o.pincode}` : ""}`
+                    : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Slot: {o.preferred_date ? formatDate(o.preferred_date) : "No date"}
+                  {o.preferred_time ? ` · ${o.preferred_time}` : ""}
+                </p>
                 <p className="mt-2 text-sm">
                   {formatPrice(Number(o.total_amount))} ·{" "}
                   {"UPI"}
