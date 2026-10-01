@@ -28,6 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const menu = useMenu();
   return (
     <div>
       <section className="relative overflow-hidden bg-primary text-primary-foreground">
