@@ -168,6 +168,45 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          category_id: string
+          category_name: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          category_id: string
+          category_name: string
+          created_at?: string
+          id: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Update: {
+          category_id?: string
+          category_name?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
