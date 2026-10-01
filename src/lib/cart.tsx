@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { findProduct } from "@/data/menu";
+import { useMenu } from "@/lib/products";
 
 export type CartLine = {
   productId: string;
@@ -63,7 +63,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
   }, [lines, hydrated]);
 
+  const liveMenu = useMenu();
   const value = useMemo<CartContextValue>(() => {
+    const all = liveMenu.flatMap((c) => c.products);
+    const findProduct = (id: string) => all.find((p) => p.id === id);
     const detailedLines: CartLineDetail[] = lines.flatMap((line) => {
       const product = findProduct(line.productId);
       const variant = product?.variants.find((v) => v.label === line.variantLabel);
@@ -118,7 +121,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ),
       clear: () => setLines([]),
     };
-  }, [lines]);
+  }, [lines, liveMenu]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

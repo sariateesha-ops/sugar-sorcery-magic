@@ -153,6 +153,13 @@ function AdminDashboard() {
           <h1 className="brand-title text-4xl text-primary">Admin Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">{gate.data.email}</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link
+          to="/admin/products"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground"
+        >
+          Manage Products
+        </Link>
         <button
           type="button"
           onClick={async () => {
@@ -164,6 +171,7 @@ function AdminDashboard() {
         >
           <LogOut className="h-4 w-4" /> Sign Out
         </button>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
