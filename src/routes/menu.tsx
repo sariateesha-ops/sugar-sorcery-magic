@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProductCard } from "@/components/ProductCard";
-import { bakery, menu } from "@/data/menu";
+import { bakery } from "@/data/menu";
+import { useMenu } from "@/lib/products";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/menu")({
 });
 
 function MenuPage() {
+  const menu = useMenu();
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
       <header className="text-center">

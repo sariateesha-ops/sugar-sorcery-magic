@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
 import { logo } from "@/assets/brand";
-import { bakery, menu } from "@/data/menu";
+import { bakery } from "@/data/menu";
+import { useMenu } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
   head: () => ({
