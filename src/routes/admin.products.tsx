@@ -71,7 +71,7 @@ function AdminProducts() {
   const remove = async (p: ProductRow) => {
     if (!confirm(`Delete "${p.name}" from the menu permanently?`)) return;
     const { error } = await supabase.from("products" as never).delete().eq("id", p.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Product deleted");
     refresh();
   };
@@ -188,8 +188,8 @@ function Editor({
   const [uploading, setUploading] = useState(false);
 
   const upload = async (file: File) => {
-    if (!file.type.startsWith("image/")) return toast.error("Please choose an image file");
-    if (file.size > 10 * 1024 * 1024) return toast.error("Image must be under 10 MB");
+    if (!file.type.startsWith("image/")) { toast.error("Please choose an image file"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB"); return; }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "jpg";
@@ -214,10 +214,10 @@ function Editor({
     const variants = d.variants
       .map((v) => ({ label: v.label.trim(), price: Number(v.price) }))
       .filter((v) => v.label);
-    if (!name) return toast.error("Enter a product name");
-    if (!variants.length) return toast.error("Add at least one size with a price");
+    if (!name) { toast.error("Enter a product name"); return; }
+    if (!variants.length) { toast.error("Add at least one size with a price"); return; }
     if (variants.some((v) => !Number.isFinite(v.price) || v.price <= 0))
-      return toast.error("Every price must be a number above 0");
+      { toast.error("Every price must be a number above 0"); return; }
     const cat = CATEGORIES.find((c) => c.id === d.category_id)!;
     const payload = {
       name,
@@ -234,7 +234,7 @@ function Editor({
           .from("products" as never)
           .insert({ ...payload, id: `${slug(cat.id)}-${slug(name)}-${Date.now().toString(36)}`, sort_order: nextOrder } as never);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(d.id ? "Product updated" : "Product added");
     onSaved();
   };

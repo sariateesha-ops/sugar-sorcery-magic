@@ -36,7 +36,7 @@ export function rowsToMenu(rows: ProductRow[]): Category[] {
       name: r.name,
       category: r.category_name,
       variants: Array.isArray(r.variants) ? r.variants : [],
-      image: r.image_url ?? undefined,
+      ...(r.image_url ? { image: r.image_url } : {}),
     };
     if (p.variants.length) order.get(r.category_id)!.products.push(p);
   }
