@@ -26,7 +26,7 @@ export const Route = createFileRoute("/admin/login")({
 function AdminLoginPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [email, setEmail] = useState("");
+  const [adminId, setAdminId] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +37,11 @@ function AdminLoginPage() {
     setBusy(true);
     setError(null);
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: `${adminId.trim().toLowerCase()}@admin.sugarsorcery.app`,
       password,
     });
     if (authError) {
-      setError("Incorrect email or password.");
+      setError("Incorrect admin ID or password.");
       setBusy(false);
       return;
     }
@@ -66,12 +66,14 @@ function AdminLoginPage() {
       >
         <label className="block">
           <span className="mb-1.5 block text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            Email
+            Admin ID
           </span>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            value={adminId}
+            onChange={(e) => setAdminId(e.target.value)}
             required
             className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
           />
