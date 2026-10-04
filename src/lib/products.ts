@@ -21,7 +21,10 @@ export async function fetchProductRows(): Promise<ProductRow[]> {
     .select("*")
     .order("sort_order", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as ProductRow[];
+  return ((data ?? []) as unknown as ProductRow[]).map((r) => ({
+    ...r,
+    image_url: r.image_url ? r.image_url.replace("/storage/v1/object/authenticated/", "/storage/v1/object/public/") : null,
+  }));
 }
 
 export function rowsToMenu(rows: ProductRow[]): Category[] {
