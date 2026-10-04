@@ -196,11 +196,8 @@ function Editor({
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
       if (error) throw error;
-      const { data, error: e2 } = await supabase.storage
-        .from("product-images")
-        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (e2 || !data) throw e2 ?? new Error("Could not create link");
-      setD((x) => ({ ...x, image_url: data.signedUrl }));
+      const base = import.meta.env["VITE_SUPABASE_URL"] as string;
+      setD((x) => ({ ...x, image_url: `${base}/storage/v1/object/authenticated/product-images/${path}` }));
       toast.success("Photo uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
