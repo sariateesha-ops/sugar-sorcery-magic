@@ -41,6 +41,25 @@ const emptyDraft = (): Draft => ({
   is_active: true,
 });
 
+/** Turns page 1 of a PDF into a JPG photo so it shows everywhere on the site. */
+async function pdfToJpeg(file: File): Promise<File> {
+  const pdfjs = await import("pdfjs-dist");
+  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const page = await doc.getPage(1);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: Math.min(3, 1600 / base.width) });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvas, viewport }).promise;
+  const blob = await new Promise<Blob>((res, rej) =>
+    canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not read PDF"))), "image/jpeg", 0.9),
+  );
+  return new File([blob], file.name.replace(/\.pdf$/i, ".jpg"), { type: "image/jpeg" });
+}
+
 function AdminProducts() {
   const gate = useAdminGate();
   const qc = useQueryClient();
@@ -187,17 +206,19 @@ function Editor({
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const upload = async (file: File) => {
-    if (!file.type.startsWith("image/")) { toast.error("Please choose an image file"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB"); return; }
+  const upload = async (original: File) => {
+    const isPdf = original.type === "application/pdf" || original.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf && !original.type.startsWith("image/")) { toast.error("Please choose a JPG, PNG or PDF file"); return; }
+    if (original.size > 10 * 1024 * 1024) { toast.error("File must be under 10 MB"); return; }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const file = isPdf ? await pdfToJpeg(original) : original;
+      const ext = isPdf ? "jpg" : (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
+      const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type || "image/jpeg" });
       if (error) throw error;
-      const base = import.meta.env["VITE_SUPABASE_URL"] as string;
-      setD((x) => ({ ...x, image_url: `${base}/storage/v1/object/authenticated/product-images/${path}` }));
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      setD((x) => ({ ...x, image_url: pub.publicUrl }));
       toast.success("Photo uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -263,7 +284,7 @@ function Editor({
                   {uploading ? "Uploading…" : d.image_url ? "Change photo" : "Upload photo"}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,application/pdf,.pdf,.jpg,.jpeg,.png"
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
