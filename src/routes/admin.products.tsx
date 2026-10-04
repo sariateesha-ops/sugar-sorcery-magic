@@ -196,7 +196,7 @@ function Editor({
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
       if (error) throw error;
-      const base = import.meta.env.VITE_SUPABASE_URL as string;
+      const base = import.meta.env["VITE_SUPABASE_URL"] as string;
       setD((x) => ({ ...x, image_url: `${base}/storage/v1/object/authenticated/product-images/${path}` }));
       toast.success("Photo uploaded");
     } catch (e) {
