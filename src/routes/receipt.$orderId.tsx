@@ -88,7 +88,7 @@ function ReceiptPage() {
         </Button>
       </div>
 
-      <div className="mt-6 rounded-xl border border-border/70 bg-card p-6 print:border-0 print:p-0">
+      <div className="receipt-document mt-6 rounded-xl border border-border/70 bg-card p-6 print:border-0 print:p-0">
         <div className="flex items-center gap-3 border-b border-border/60 pb-5">
           <img
             src={logo.url}
