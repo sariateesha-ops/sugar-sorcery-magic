@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Printer } from "lucide-react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getMyOrder } from "@/lib/customer.functions";
 import { useCustomer } from "@/lib/customer-session";
 import { formatPrice } from "@/lib/cart";
@@ -20,6 +21,8 @@ export const Route = createFileRoute("/receipt/$orderId")({
           "Printable Sugar Sorcery order receipt with items, totals, payment method and order status.",
       },
       { property: "og:title", content: "Order Receipt — Sugar Sorcery" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Keep a printable receipt of your Sugar Sorcery pre-order.",
@@ -80,13 +83,9 @@ function ReceiptPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Order details
         </Link>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm uppercase tracking-[0.16em] text-primary-foreground"
-        >
-          <Printer className="h-4 w-4" /> Print / Save PDF
-        </button>
+        <Button type="button" size="lg" onClick={() => window.print()}>
+          <Download className="h-4 w-4" /> Save receipt as PDF
+        </Button>
       </div>
 
       <div className="mt-6 rounded-xl border border-border/70 bg-card p-6 print:border-0 print:p-0">
@@ -219,6 +218,9 @@ function ReceiptPage() {
           Thank you for ordering from {bakery.name}. All orders are pre-orders and
           require at least 24 hours notice. Keep this receipt as proof of your order.
           For any query, WhatsApp {bakery.phone}.
+        </p>
+        <p className="brand-title mt-5 text-center text-lg text-primary">
+          With sweetness, Sugar Sorcery
         </p>
       </div>
     </div>

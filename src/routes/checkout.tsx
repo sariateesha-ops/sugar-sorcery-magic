@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CheckCircle2,
+  Download,
   MessageCircle,
   QrCode,
   Sparkles,
@@ -11,6 +12,7 @@ import {
   Upload,
   UserRound,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { bakery, deliveryNote } from "@/data/menu";
 import { formatPrice, useCart } from "@/lib/cart";
 import { createOrder, uploadPaymentProof } from "@/lib/orders.functions";
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/checkout")({
           "Confirm your Sugar Sorcery pre-order: choose self pickup or delivery, pay by UPI / QR code, and follow it in My Orders.",
       },
       { property: "og:title", content: "Checkout — Sugar Sorcery" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content:
@@ -177,6 +181,11 @@ function CheckoutPage() {
           follow it any time in My Orders.
         </p>
         <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button asChild size="lg">
+            <Link to="/receipt/$orderId" params={{ orderId: placed.orderId }}>
+              <Download className="h-4 w-4" /> Open receipt · Save as PDF
+            </Link>
+          </Button>
           <Link
             to="/my-orders"
             className="rounded-full bg-primary px-6 py-2.5 text-sm text-primary-foreground"
