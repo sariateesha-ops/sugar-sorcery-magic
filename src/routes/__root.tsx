@@ -137,18 +137,19 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Admin portal is a separate surface: no customer menu, account or cart chrome.
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isReceipt = pathname.startsWith("/receipt/");
 
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <CustomerProvider>
           <div className="flex min-h-screen flex-col">
-            {!isAdmin && <SiteHeader />}
+            {!isAdmin && <div className={isReceipt ? "print:hidden" : undefined}><SiteHeader /></div>}
             <main className="flex-1">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
-            {!isAdmin && <SiteFooter />}
+            {!isAdmin && <div className={isReceipt ? "print:hidden" : undefined}><SiteFooter /></div>}
           </div>
           <Toaster position="top-center" />
         </CustomerProvider>

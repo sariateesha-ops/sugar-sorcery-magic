@@ -101,3 +101,37 @@
   );
   opacity: 0.4;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .receipt-document {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: white !important;
+    color: black !important;
+    box-shadow: none;
+  }
+
+  .receipt-document * {
+    color: black !important;
+    border-color: #d1d5db !important;
+  }
+
+  .receipt-document img {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
